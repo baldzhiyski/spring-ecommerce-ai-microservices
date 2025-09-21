@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: springone-mcp
+  main:
+    web-application-type: none
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        stdio: true
+        type: sync
+        name: springone-sessions-mcp
+        version: 0.0.1
+
+# Disable banner and logging for STDIO transport
+logging:
+  level:
+    root: OFF

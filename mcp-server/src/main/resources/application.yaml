@@ -2,17 +2,31 @@ spring:
   application:
     name: springone-mcp
   main:
-    web-application-type: none
-    banner-mode: off
+    web-application-type: servlet
+    banner-mode: log
   ai:
     mcp:
       server:
-        stdio: true
+        stdio: false
         type: sync
         name: springone-sessions-mcp
         version: 0.0.1
+        enabled: true
+        instructions: "This server provides session catalog data for SpringOne 2025"
 
-# Disable banner and logging for STDIO transport
+  security:
+    oauth2:
+      authorizationserver:
+        client:
+          oidc-client:
+            registration:
+              client-id: mcp-client
+              client-secret: "{noop}secret"
+              client-authentication-methods: client_secret_basic
+              authorization-grant-types: client_credentials
+server:
+  port: 8080
+
 logging:
   level:
-    root: OFF
+    org: INFO
