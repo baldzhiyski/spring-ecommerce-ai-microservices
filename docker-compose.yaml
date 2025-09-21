@@ -1,0 +1,90 @@
+services:
+  postgresql:
+    container_name: ms_pg_sql
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zipkin:
+    container_name: zipkin
+    env_file:
+      - .env
+    image: openzipkin/zipkin:latest
+    ports:
+      - "${ZIPKIN_PORT}:9411"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+  mongodb:
+    container_name: mongo_db
+    image: mongo
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+    volumes:
+      - mongo:/data/db
+    ports:
+      - "${MONGODB_PORT}:27017"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+  mail-dev:
+    container_name: ms-mail-dev
+    image: maildev/maildev
+    env_file:
+      - .env
+    ports:
+      - "${MAILDEV_UI_PORT}:1080"
+      - "${MAILDEV_SMTP_PORT}:1025"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+  rabbitmq:
+    container_name: ms_rabbitmq
+    image: rabbitmq:3-management
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_DEFAULT_VHOST}
+    ports:
+      - "${RABBITMQ_AMQP_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  postgres:
+  mongo:
+  rabbitmq:
