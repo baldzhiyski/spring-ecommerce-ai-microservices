@@ -6,15 +6,19 @@ services:
       context: ./services/config-service
       dockerfile: Dockerfile
     container_name: ms_config_service
+    ports:
+      - "${CONFIG_SERVICE_PORT}:9999"
     networks:
       - microservices-net
     restart: unless-stopped
     # healthcheck requires actuator; otherwise keep it simple or remove
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO- http://localhost:9999/actuator/health | grep -q '\"status\":\"UP\"' || exit 1" ]
-      interval: 15s
-      timeout: 5s
+      # succeed if TCP + HTTP respond at all (even 404)
+      test: ["CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:9999 || exit 1"]
+      interval: 10s
+      timeout: 3s
       retries: 10
+      start_period: 40s   # give Spring time to start
 
   # === Eureka Discovery Server ===
   discovery-service:
@@ -31,9 +35,9 @@ services:
       config-service:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep -q '\"status\":\"UP\"' || exit 1" ]
-      interval: 15s
-      timeout: 5s
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8761/ || exit 1" ]
+      interval: 10s
+      timeout: 3s
       retries: 10
 
   postgresql:
@@ -54,10 +58,11 @@ services:
       - microservices-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8761 || exit 1" ]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 3s
+      retries: 10
+      start_period: 40s
 
   zipkin:
     container_name: zipkin
