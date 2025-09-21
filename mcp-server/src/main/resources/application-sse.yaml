@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: springone-mcp
+  main:
+    web-application-type: servlet
+    banner-mode: log
+  ai:
+    mcp:
+      server:
+        stdio: false
+        type: sync
+        name: springone-sessions-mcp
+        version: 0.0.1
+        enabled: true
+        instructions: "This server provides session catalog data for SpringOne 2025"
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org: INFO
