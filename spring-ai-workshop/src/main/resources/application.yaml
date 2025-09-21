@@ -3,6 +3,9 @@ spring:
 
   application:
 
+    vectorStoreName: vectorestore.json
+    vectorStoreDir: rag/data
+
     name: spring-ai-workshop
 
   ai:
@@ -12,10 +15,17 @@ spring:
     openai:
       api-key: ${OPENAI_API_KEY}
 
+      embedding:
+        options:
+          model: text-embedding-ada-002
+
       chat:
         options:
           model: gpt-4o
     ollama:
+      embedding:
+        options:
+          model: nomic-embed-text
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
         options:
