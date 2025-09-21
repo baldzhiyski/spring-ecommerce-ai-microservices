@@ -1,0 +1,26 @@
+spring:
+
+
+  application:
+
+    name: spring-ai-workshop
+
+  ai:
+    chat:
+      client:
+        enabled: false
+    openai:
+      api-key: ${OPENAI_API_KEY}
+
+      chat:
+        options:
+          model: gpt-4o
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+
+          model: llama3.1:8b
+
+server:
+  port: ${PORT:8080}
