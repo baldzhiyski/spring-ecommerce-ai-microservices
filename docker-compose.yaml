@@ -1,4 +1,41 @@
 services:
+
+  # === Spring Cloud Config Server ===
+  config-service:
+    build:
+      context: ./services/config-service
+      dockerfile: Dockerfile
+    container_name: ms_config_service
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    # healthcheck requires actuator; otherwise keep it simple or remove
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:9999/actuator/health | grep -q '\"status\":\"UP\"' || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  # === Eureka Discovery Server ===
+  discovery-service:
+    build:
+      context: ./services/discovery-service
+      dockerfile: Dockerfile
+    container_name: ms_discovery_service
+    ports:
+      - "${DISCOVERY_SERVICE_PORT}:8761"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    depends_on:
+      config-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep -q '\"status\":\"UP\"' || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
   postgresql:
     container_name: ms_pg_sql
     image: postgres:16-alpine
