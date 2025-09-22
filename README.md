@@ -56,16 +56,29 @@ This project is a **Microservices-based E-Commerce Application** built with **Sp
 ---
 
 ## Event Flows (RabbitMQ)
-- **Orders → Notifications**
-    - `order.created`, `order.paid`, `order.shipped` → Notification Service sends confirmations.
-- **Payments → Notifications**
-    - `payment.succeeded`, `payment.failed` → Notification Service sends receipts/alerts.
-- **AI Email Worker → Notifications**
-    - `email.send` (to, subject, html) → Notification Service dispatches weekly mail.
+
+- **Orders → Notifications**  
+  `order.created`, `order.paid`, `order.shipped` → Notification Service delivers order confirmations, payment receipts, and shipping updates.
+
+- **Payments → Notifications**  
+  `payment.succeeded`, `payment.failed` → Notification Service sends success/failure receipts and follow-up actions.
+
+- **AI Email Worker → Notifications**  
+  `email.send` → Notification Service dispatches personalized emails.  
+  The **AI Email Worker**:
+  - Curates **per-user product recommendations** and **guard-railed discounts**.
+  - **Detects user inactivity/churn risk** and triggers targeted nudges.
+  - Generates localized **subject/body** via Spring AI and logs outcomes for learning (A/B testing ready).
+  - Uses **RAG (Retrieval-Augmented Generation)** to combine:
+    - **Global knowledge** (products, FAQs, policies).  
+    - **User-scoped signals** (preferences, intents, recency).  
+
+This ensures every message is **context-aware** and tailored to the user’s journey.
+
 
 ---
 
-## Tech & Runtime Choices
+##  Runtime Choices
 - **Normal Spring Web (Servlet/MVC):**
     - Orders, Customer, Payment, Product, Notifications, Config, Eureka, Gateway.
 - **Spring WebFlux (Reactive):**
@@ -76,13 +89,18 @@ This project is a **Microservices-based E-Commerce Application** built with **Sp
 ---
 
 ## Security & Observability
+
 - **Security**
-    - Gateway enforces end-user auth (JWT/OAuth2).
-    - Service-to-service calls use service JWTs; internal networks only.
+  - **Keycloak** provides centralized authentication and authorization (OAuth2/OpenID Connect).
+  - API Gateway enforces **end-user auth** with JWT tokens issued by Keycloak.
+  - Postman (or any OAuth2 client) can request tokens from Keycloak for testing secured APIs.
+  - Service-to-service calls use short-lived **service JWTs**; internal traffic only.
+
+
 - **Observability**
-    - Spring Boot Actuator + metrics (p95/p99).
-    - Distributed tracing across Gateway → Services → AI.
-    - Correlation IDs (`X-Request-Id`) propagated end-to-end.
+  - **Distributed tracing with Zipkin** to visualize requests across **Gateway → Services → AI**.
+  - **AOP-based structured logging** for consistent application logs and audit trails.
+
 
 ---
 
@@ -97,10 +115,13 @@ This project is a **Microservices-based E-Commerce Application** built with **Sp
 
 ## 🔧 Tech Stack
 - **Spring Boot** – Core microservices framework
-- **Spring Cloud** – Service discovery, API Gateway, configuration management
-- **Spring AI** – Generative AI integration for enhanced user experiences (e.g., product recommendations, smart search, AI-driven descriptions)
-- **RabbitMQ** – Message broker for asynchronous communication and event-driven architecture
+- **Spring Cloud** – Service discovery, API Gateway (Per-user/IP rate limits to protect AI endpoints), configuration management
+- **Spring Cloud CircuitBreaker (Resilience4j)** – Timeouts, retries, circuit breaking, bulkheads for downstream calls
+- **Spring AI** – Generative AI integration (recommendations, smart search, AI-driven descriptions)
+- **RabbitMQ** – Message broker for asynchronous, event-driven architecture
 - **REST APIs** – Clean and well-structured endpoints for e-commerce workflows
+- **springdoc-openapi** – Auto-generated OpenAPI + Swagger UI for every service
+
 
 ---
 
