@@ -38,14 +38,20 @@ This project is a **Microservices-based E-Commerce Application** built with **Sp
 ---
 
 ## AI Services
+
 - **AI Email Worker (Headless)**
-    - Scheduled weekly recommendations & personalized discounts.
-    - Generates subject/body via Spring AI.
-    - Publishes `EmailSendCommand` to Notification Service via RabbitMQ.
+  - Scheduled weekly recommendations & personalized discounts.
+  - Detects user inactivity / churn risk (e.g., no views or cart activity for N days) and generates targeted nudges.
+  - Proposes guarded incentives (small, budget-aware discounts with floors/MAP, category exclusions) when risk is high.
+  - Uses Spring AI to craft subject/body with clear CTAs; A/B tests subject lines; logs outcomes for learning.
+  - Publishes `EmailSendCommand` and `OfferGenerated` events to Notification Service via RabbitMQ.
+
 - **AI Assistant & Personalization API (WebFlux)**
-    - Real-time endpoints: chat, semantic suggestions, on-page recommendations.
-    - Optional SSE/WebSocket streaming for token-by-token responses.
-    - Aggregates Product/Price/Inventory/Vector DB in parallel (non-blocking).
+  - **Conversational Q&A (Streaming RAG):** Unified endpoint for product/policy Q&A and chat with per-user memory; streams tokens via SSE/WebSocket.
+  - **Visual Search:** Image-to-product matching (embeddings + vector DB) with “why this match” rationales.
+  - **Checkout Upsell Bundles (Real-time):** Suggests add-on bundles before payment; validates stock/margin/thresholds in-flight.
+  - **Search Re-ranking & Query Rewrite:** Reorders candidates using user signals and expands/clarifies queries for relevance.
+  - Built on WebFlux for non-blocking fan-out to Product/Price/Inventory/Vector stores and low-latency streaming responses.
 
 ---
 
