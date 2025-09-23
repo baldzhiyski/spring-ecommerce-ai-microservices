@@ -1,6 +1,27 @@
 services:
 
   # === Spring Cloud Config Server ===
+
+  customer-service:
+    build:
+      context: ./services/customer
+      dockerfile: Dockerfile
+    container_name: ms_customer_service
+    ports:
+      - "${CUSTOMER_SERVICE}:8090"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+    healthcheck:
+      # succeed if TCP + HTTP respond at all (even 404)
+      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8090 || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 40s   # give Spring time to start
+    depends_on:
+      - mongodb
+
   config-service:
     build:
       context: ./services/config-service
@@ -83,7 +104,6 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
     volumes:
       - mongo:/data/db
     ports:
