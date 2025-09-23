@@ -2,6 +2,33 @@ services:
 
   # === Spring Cloud Config Server ===
 
+  product-service:
+    build:
+      context: ./services/product
+      dockerfile: Dockerfile
+    container_name: ms_product_service
+    ports:
+      - "${PRODUCT_SERVICE}:8050"
+    networks:
+      - microservices-net
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      # succeed if TCP + HTTP respond at all (even 404)
+      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8050 || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 40s   # give Spring time to start
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+
   customer-service:
     build:
       context: ./services/customer
@@ -11,6 +38,8 @@ services:
       - "${CUSTOMER_SERVICE}:8090"
     networks:
       - microservices-net
+    env_file:
+      - .env
     restart: unless-stopped
     healthcheck:
       # succeed if TCP + HTTP respond at all (even 404)
@@ -20,7 +49,12 @@ services:
       retries: 10
       start_period: 40s   # give Spring time to start
     depends_on:
-      - mongodb
+      discovery-service:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
 
   config-service:
     build:
@@ -31,6 +65,8 @@ services:
       - "${CONFIG_SERVICE_PORT}:9999"
     networks:
       - microservices-net
+    env_file:
+      - .env
     restart: unless-stopped
     # healthcheck requires actuator; otherwise keep it simple or remove
     healthcheck:
@@ -69,7 +105,6 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres

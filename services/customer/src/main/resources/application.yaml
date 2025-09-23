@@ -3,4 +3,4 @@ spring:
     name: customer
 
   config:
-    import: optional:configserver:http://localhost:9999
+    import: optional:configserver:http://config-service:9999

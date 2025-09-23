@@ -1,0 +1,5 @@
+spring:
+  config:
+    import: optional:configserver:http://config-service:9999
+  application:
+    name: product-service
