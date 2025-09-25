@@ -196,6 +196,7 @@ services:
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres
+      - ./db-init:/docker-entrypoint-initdb.d
     ports:
       - "${POSTGRES_PORT}:5432"
     networks:
