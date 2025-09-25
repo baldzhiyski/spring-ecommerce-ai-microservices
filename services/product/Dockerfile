@@ -1,21 +1,26 @@
-# ---- Build stage ----
-FROM gradle:8.8-jdk21 AS build
-WORKDIR /app
-ENV GRADLE_USER_HOME=/home/gradle/.gradle
-COPY . .
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon clean bootJar -x test
+# ---- Dev runtime (hot reload) ----
+FROM eclipse-temurin:21-jdk
 
-# ---- Runtime stage ----
-FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# install curl for healthchecks
+# curl for healthchecks (optional)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/build/libs/*.jar /app/app.jar
+# Copy wrapper + build files first for better layer caching
+COPY gradlew gradlew
+COPY gradle gradle
+COPY build.gradle settings.gradle ./
+
+# Pre-fetch dependencies for faster first run
+RUN chmod +x gradlew && ./gradlew --no-daemon dependencies || true
+
+# Initial source copy; during dev you'll bind-mount the whole folder
+COPY src src
+
 ENV SERVER_PORT=8050
 EXPOSE 8050
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+
+# Run in dev profile; Spring DevTools must be on the classpath
+CMD ["./gradlew","--no-daemon","bootRun","-Pspring.profiles.active=dev"]

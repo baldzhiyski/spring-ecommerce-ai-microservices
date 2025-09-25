@@ -1,7 +1,6 @@
 services:
 
-  # === Spring Cloud Config Server ===
-
+  # === Product Service (Spring Boot, hot reload) ===
   product-service:
     build:
       context: ./services/product
@@ -14,13 +13,19 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    # bind-mount code + Gradle cache for fast recompiles
+    volumes:
+      - ./services/product:/app
+      - ~/.gradle:/root/.gradle
+    # make sure we run bootRun in dev profile
+    command: >
+      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
     healthcheck:
-      # succeed if TCP + HTTP respond at all (even 404)
       test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8050 || exit 1" ]
       interval: 10s
       timeout: 3s
       retries: 10
-      start_period: 40s   # give Spring time to start
+      start_period: 40s
     depends_on:
       discovery-service:
         condition: service_healthy
@@ -28,7 +33,27 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_started
+    develop:
+      watch:
+        - path: ./services/product/src
+          target: /app/src
+          action: sync
+          ignore:
+            - "**/build/**"
+            - "**/.idea/**"
+            - "**/.git/**"
+        - path: ./services/product/build.gradle
+          target: /app/build.gradle
+          action: sync
+        - path: ./services/product/settings.gradle
+          target: /app/settings.gradle
+          action: sync
+        - path: ./services/product/gradlew
+          action: rebuild
+        - path: ./services/product/gradle
+          action: rebuild
 
+  # === Customer Service (Spring Boot, hot reload) ===
   customer-service:
     build:
       context: ./services/customer
@@ -41,13 +66,16 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    volumes:
+      - ./services/customer:/app
+      - ~/.gradle:/root/.gradle
+    command: >
+      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
     healthcheck:
-      # succeed if TCP + HTTP respond at all (even 404)
       test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8090 || exit 1" ]
       interval: 10s
       timeout: 3s
       retries: 10
-      start_period: 40s   # give Spring time to start
     depends_on:
       discovery-service:
         condition: service_healthy
@@ -55,7 +83,27 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_started
+    develop:
+      watch:
+        - path: ./services/customer/src
+          target: /app/src
+          action: sync
+          ignore:
+            - "**/build/**"
+            - "**/.idea/**"
+            - "**/.git/**"
+        - path: ./services/customer/build.gradle
+          target: /app/build.gradle
+          action: sync
+        - path: ./services/customer/settings.gradle
+          target: /app/settings.gradle
+          action: sync
+        - path: ./services/customer/gradlew
+          action: rebuild
+        - path: ./services/customer/gradle
+          action: rebuild
 
+  # === Spring Cloud Config Server (Spring Boot, hot reload) ===
   config-service:
     build:
       context: ./services/config-service
@@ -68,16 +116,19 @@ services:
     env_file:
       - .env
     restart: unless-stopped
-    # healthcheck requires actuator; otherwise keep it simple or remove
+    volumes:
+      - ./services/config-service:/app
+      - ~/.gradle:/root/.gradle
+    command: >
+      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
     healthcheck:
-      # succeed if TCP + HTTP respond at all (even 404)
-      test: ["CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:9999 || exit 1"]
+      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:9999 || exit 1" ]
       interval: 10s
       timeout: 3s
       retries: 10
-      start_period: 40s   # give Spring time to start
+      start_period: 40s
 
-  # === Eureka Discovery Server ===
+  # === Eureka Discovery Server (Spring Boot, hot reload) ===
   discovery-service:
     build:
       context: ./services/discovery-service
@@ -88,6 +139,11 @@ services:
     networks:
       - microservices-net
     restart: unless-stopped
+    volumes:
+      - ./services/discovery-service:/app
+      - ~/.gradle:/root/.gradle
+    command: >
+      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
     depends_on:
       config-service:
         condition: service_healthy
@@ -96,7 +152,28 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
+      start_period: 40s
+    develop:
+      watch:
+        - path: ./services/discovery-service/src
+          target: /app/src
+          action: sync
+          ignore:
+            - "**/build/**"
+            - "**/.idea/**"
+            - "**/.git/**"
+        - path: ./services/discovery-service/build.gradle
+          target: /app/build.gradle
+          action: sync
+        - path: ./services/discovery-service/settings.gradle
+          target: /app/settings.gradle
+          action: sync
+        - path: ./services/discovery-service/gradlew
+          action: rebuild
+        - path: ./services/discovery-service/gradle
+          action: rebuild
 
+  # === PostgreSQL ===
   postgresql:
     container_name: ms_pg_sql
     image: postgres:16-alpine
@@ -114,23 +191,25 @@ services:
       - microservices-net
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8761 || exit 1" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
       interval: 10s
-      timeout: 3s
+      timeout: 5s
       retries: 10
-      start_period: 40s
+      start_period: 30s
 
+  # === Zipkin ===
   zipkin:
     container_name: zipkin
+    image: openzipkin/zipkin:latest
     env_file:
       - .env
-    image: openzipkin/zipkin:latest
     ports:
       - "${ZIPKIN_PORT}:9411"
     networks:
       - microservices-net
     restart: unless-stopped
 
+  # === MongoDB ===
   mongodb:
     container_name: mongo_db
     image: mongo
@@ -147,6 +226,7 @@ services:
       - microservices-net
     restart: unless-stopped
 
+  # === MailDev (SMTP + UI) ===
   mail-dev:
     container_name: ms-mail-dev
     image: maildev/maildev
@@ -159,6 +239,7 @@ services:
       - microservices-net
     restart: unless-stopped
 
+  # === RabbitMQ (Management) ===
   rabbitmq:
     container_name: ms_rabbitmq
     image: rabbitmq:3-management

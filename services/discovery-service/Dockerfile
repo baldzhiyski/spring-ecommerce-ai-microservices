@@ -1,21 +1,26 @@
-# ---- Build stage ----
-FROM gradle:8.8-jdk21 AS build
-WORKDIR /app
-ENV GRADLE_USER_HOME=/home/gradle/.gradle
-COPY . .
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon clean bootJar -x test
+# ---- Dev runtime (hot reload enabled) ----
+FROM eclipse-temurin:21-jdk
 
-# ---- Runtime stage ----
-FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# install curl for healthchecks
+# Install curl for healthchecks (optional)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/build/libs/*.jar /app/app.jar
+# Copy wrapper + build files first (better caching)
+COPY gradlew gradlew
+COPY gradle gradle
+COPY build.gradle settings.gradle ./
+
+# Pre-fetch dependencies to speed up first run
+RUN chmod +x gradlew && ./gradlew --no-daemon dependencies || true
+
+# Copy source (initial build only – will be bind-mounted later)
+COPY src src
+
 ENV SERVER_PORT=8761
 EXPOSE 8761
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+
+# Run the app in dev profile with hot reload
+CMD ["./gradlew","--no-daemon","bootRun","-Pspring.profiles.active=dev"]

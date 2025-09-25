@@ -1,22 +1,30 @@
-# ---- Build stage ----
-FROM gradle:8.8-jdk17 AS build
-WORKDIR /app
-ENV GRADLE_USER_HOME=/home/gradle/.gradle
-COPY . .
-# cache Gradle deps (requires BuildKit)
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon clean bootJar -x test
+# ---- Dev runtime (runs bootRun) ----
+FROM eclipse-temurin:17-jdk
 
-# ---- Runtime stage ----
-FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# install curl for healthchecks
+# Install curl for healthchecks (optional)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/build/libs/*.jar /app/app.jar
+# Copy only what's needed for dependency download first (layer caching)
+# Gradle wrapper + build files
+COPY gradlew gradlew
+COPY gradle gradle
+COPY build.gradle settings.gradle ./
+
+# Prime Gradle dependency cache (first-time speedup)
+# --no-daemon is good inside containers
+RUN chmod +x gradlew && ./gradlew --no-daemon dependencies || true
+
+# Copy source once for initial build; in compose we'll bind-mount /app later
+COPY src src
+
+# Expose your dev port (adjust if this service uses another)
 ENV SERVER_PORT=9999
 EXPOSE 9999
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+
+# Enable dev profile and devtools restart
+# (devtools dependency must be in build.gradle)
+CMD ["./gradlew", "--no-daemon", "bootRun", "-Pspring.profiles.active=dev"]
