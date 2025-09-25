@@ -12,12 +12,13 @@ services:
       - microservices-net
     env_file:
       - .env
+    environment:
+      GRADLE_USER_HOME: /gradle-home
+      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
     restart: unless-stopped
-    # bind-mount code + Gradle cache for fast recompiles
     volumes:
       - ./services/product:/app
-      - ~/.gradle:/root/.gradle
-    # make sure we run bootRun in dev profile
+      - gradle-cache-product:/gradle-home
     command: >
       ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
     healthcheck:
@@ -31,7 +32,7 @@ services:
         condition: service_healthy
       config-service:
         condition: service_healthy
-      mongodb:
+      postgresql:
         condition: service_started
     develop:
       watch:
@@ -65,10 +66,13 @@ services:
       - microservices-net
     env_file:
       - .env
+    environment:
+      GRADLE_USER_HOME: /gradle-home
+      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
     restart: unless-stopped
     volumes:
       - ./services/customer:/app
-      - ~/.gradle:/root/.gradle
+      - gradle-cache-customer:/gradle-home
     command: >
       ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
     healthcheck:
@@ -76,6 +80,7 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
+      start_period: 40s
     depends_on:
       discovery-service:
         condition: service_healthy
@@ -115,10 +120,13 @@ services:
       - microservices-net
     env_file:
       - .env
+    environment:
+      GRADLE_USER_HOME: /gradle-home
+      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
     restart: unless-stopped
     volumes:
       - ./services/config-service:/app
-      - ~/.gradle:/root/.gradle
+      - gradle-cache-config:/gradle-home
     command: >
       ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
     healthcheck:
@@ -138,10 +146,13 @@ services:
       - "${DISCOVERY_SERVICE_PORT}:8761"
     networks:
       - microservices-net
+    environment:
+      GRADLE_USER_HOME: /gradle-home
+      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
     restart: unless-stopped
     volumes:
       - ./services/discovery-service:/app
-      - ~/.gradle:/root/.gradle
+      - gradle-cache-discovery:/gradle-home
     command: >
       ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
     depends_on:
@@ -266,3 +277,7 @@ volumes:
   postgres:
   mongo:
   rabbitmq:
+  gradle-cache-product:
+  gradle-cache-customer:
+  gradle-cache-config:
+  gradle-cache-discovery:
