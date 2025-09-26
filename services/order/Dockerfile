@@ -19,8 +19,8 @@ RUN chmod +x gradlew && ./gradlew --no-daemon dependencies || true
 # Initial source copy; during dev you'll bind-mount the whole folder
 COPY src src
 
-ENV SERVER_PORT=8050
-EXPOSE 8050
+ENV SERVER_PORT=8070
+EXPOSE 8070
 
 # Run in dev profile; Spring DevTools must be on the classpath
 CMD ["./gradlew","--no-daemon","bootRun","-Pspring.profiles.active=dev"]
