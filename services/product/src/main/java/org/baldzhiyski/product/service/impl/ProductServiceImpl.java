@@ -38,7 +38,7 @@ public class ProductServiceImpl  implements ProductService {
 
     @Override
     @Transactional
-    public List<ProductPurchasedResp> purchaseProducts(List<BuyProductReq> request) {
+    public List<ProductPurchasedResp> purchaseProducts(List<BuyProductReq> request, String customerId) {
         // 1) collect IDs (preserve request order)
         List<Integer> idsInOrder = request.stream()
                 .map(BuyProductReq::id)
@@ -91,8 +91,6 @@ public class ProductServiceImpl  implements ProductService {
 
         // TODO: publish domain events / outbox, charge payment, etc.
 
-        // TODO: Take the id from the Auth Token later
-        String customerId = "129319210dasdsa";
 
         // 8) build response (keep request order, collapse duplicates)
         return idsInOrder.stream()
