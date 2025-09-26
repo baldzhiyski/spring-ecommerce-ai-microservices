@@ -3,6 +3,7 @@ package org.baldzhiyski.order.controller;
 import lombok.RequiredArgsConstructor;
 
 import org.baldzhiyski.order.model.req.OrderReq;
+import org.baldzhiyski.order.model.res.OrderRes;
 import org.baldzhiyski.order.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
