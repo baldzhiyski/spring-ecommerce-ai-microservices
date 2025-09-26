@@ -14,7 +14,7 @@ public class RabbitConfig {
     private String exchangeName;
 
     @Bean
-    public TopicExchange ordersExchange() {
+    public TopicExchange appEventsExchange() {
         return new TopicExchange(exchangeName, true, false);
     }
 

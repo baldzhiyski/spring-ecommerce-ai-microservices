@@ -4,10 +4,6 @@ spring:
     port: ${RABBITMQ_AMQP_PORT:5672}
     username: ${RABBITMQ_DEFAULT_USER}
     password: ${RABBITMQ_DEFAULT_PASS}
-
-  app:
-    mq:
-      exchange: orders.notifications
   datasource:
     url: jdbc:postgresql://postgresql:5432/orders
     username: ${POSTGRES_USER}
@@ -30,3 +26,8 @@ application:
     customer-url: http://api-gateway:8222/api/v1/customers
     product-url: http://api-gateway:8222/api/v1/products
     payment-url: http://api-gateway:8222/api/v1/payments
+
+
+app:
+  mq:
+    exchange: app.events

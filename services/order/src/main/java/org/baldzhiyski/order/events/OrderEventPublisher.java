@@ -13,12 +13,12 @@ import org.springframework.stereotype.Component;
 public class OrderEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
-    private final TopicExchange ordersExchange;
+    private final TopicExchange appEventsExchange;
 
     public void publishOrderCreated(Order order, CustomerRes customer) {
         var event = OrderCreatedEvent.of(order,customer);
         rabbitTemplate.convertAndSend(
-                ordersExchange.getName(),
+                appEventsExchange.getName(),
                 "order.created",
                 event,
                 msg -> {
