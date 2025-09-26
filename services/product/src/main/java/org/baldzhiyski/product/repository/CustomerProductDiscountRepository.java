@@ -21,7 +21,7 @@ public interface CustomerProductDiscountRepository extends JpaRepository<Custome
   select d from CustomerProductDiscount d
   where d.customerId = :customerId and d.productId = :productId and d.active = true
   """)
-    Optional<CustomerProductDiscount> findActiveAny(@Param("customerId") Integer customerId,
+    Optional<CustomerProductDiscount> findActiveAny(@Param("customerId") String customerId,
                                                     @Param("productId") Integer productId);
 
 
@@ -34,7 +34,7 @@ public interface CustomerProductDiscountRepository extends JpaRepository<Custome
       and (:now >= coalesce(d.startsAt, :now))
       and (:now <= coalesce(d.endsAt,   :now))
     """)
-    Optional<CustomerProductDiscount> findActiveForNow(@Param("customerId") Integer customerId,
+    Optional<CustomerProductDiscount> findActiveForNow(@Param("customerId") String customerId,
                                                        @Param("productId") Integer productId,
                                                        @Param("now") OffsetDateTime now);
 

@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS customer_product_discount (
                                                          id           INTEGER PRIMARY KEY,
-                                                         customer_id  INTEGER      NOT NULL,
+                                                         customer_id  VARCHAR      NOT NULL,
                                                          product_id   INTEGER     NOT NULL REFERENCES product(id) ON DELETE CASCADE,
                                                          discount     NUMERIC(4,3) NOT NULL CHECK (discount >= 0 AND discount <= 1), -- 0..1 (e.g., 0.150 = 15%)
                                                          starts_at    TIMESTAMPTZ NULL,

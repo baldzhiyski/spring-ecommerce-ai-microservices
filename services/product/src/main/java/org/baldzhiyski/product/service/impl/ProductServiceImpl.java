@@ -92,7 +92,7 @@ public class ProductServiceImpl  implements ProductService {
         // TODO: publish domain events / outbox, charge payment, etc.
 
         // TODO: Take the id from the Auth Token later
-        Integer customerId = 1;
+        String customerId = "129319210dasdsa";
 
         // 8) build response (keep request order, collapse duplicates)
         return idsInOrder.stream()

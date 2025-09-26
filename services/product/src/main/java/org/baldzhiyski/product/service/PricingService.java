@@ -7,7 +7,7 @@ import org.baldzhiyski.product.model.req.CustomerDiscountUpsertReq;
 import java.math.BigDecimal;
 
 public interface PricingService {
-    BigDecimal effectiveDiscount(Integer customerId, Product product);
+    BigDecimal effectiveDiscount(String customerId, Product product);
     BigDecimal finalPrice(BigDecimal price, BigDecimal discount);
     JSONResponse upsert(CustomerDiscountUpsertReq req);
     JSONResponse purgeExpired();

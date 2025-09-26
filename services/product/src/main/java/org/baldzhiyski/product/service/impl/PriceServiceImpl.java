@@ -22,7 +22,7 @@ public class PriceServiceImpl implements PricingService {
     }
 
     @Override
-    public BigDecimal effectiveDiscount(Integer customerId, Product product) {
+    public BigDecimal effectiveDiscount(String customerId, Product product) {
         BigDecimal base = product.getDiscount() == null ? BigDecimal.ZERO : product.getDiscount();
         if (customerId == null) return base;
 

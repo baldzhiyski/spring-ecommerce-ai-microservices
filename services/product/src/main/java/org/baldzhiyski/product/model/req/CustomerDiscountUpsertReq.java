@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 public record CustomerDiscountUpsertReq(
-        @NotNull(message = "customerId is required") Integer customerId,
+        @NotNull(message = "customerId is required") String customerId,
         @NotNull(message = "productId is required") Integer productId,
         @NotNull(message = "discount is required")
         @DecimalMin(value = "0.000", inclusive = true, message = "discount must be >= 0.000")

@@ -15,7 +15,7 @@ public class CustomerProductDiscount {
     private Integer id;
 
     @Column(name = "customer_id", nullable = false)
-    private Integer customerId;
+    private String customerId;
 
     @Column(name = "product_id", nullable = false)
     private Integer productId;
