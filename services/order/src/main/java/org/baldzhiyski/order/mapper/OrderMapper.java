@@ -13,9 +13,12 @@ import org.mapstruct.*;
 public interface OrderMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "orderLines" , ignore = true)
-    @Mapping(target = "totalAmount",ignore = true)
+    @Mapping(target = "orderLines", ignore = true)
+    @Mapping(target = "totalAmount", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     Order toEntity(OrderReq req);
+
 
     // For reading
     @Mapping(source = "orderLines", target = "lines")
