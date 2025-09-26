@@ -1,4 +1,13 @@
 spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_AMQP_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER}
+    password: ${RABBITMQ_DEFAULT_PASS}
+
+  app:
+    mq:
+      exchange: orders.notifications
   datasource:
     url: jdbc:postgresql://postgresql:5432/orders
     username: ${POSTGRES_USER}

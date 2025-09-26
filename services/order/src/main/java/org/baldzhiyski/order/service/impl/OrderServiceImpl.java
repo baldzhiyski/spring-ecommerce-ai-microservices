@@ -3,6 +3,7 @@ package org.baldzhiyski.order.service.impl;
 import jakarta.transaction.Transactional;
 import org.baldzhiyski.order.customer.CustomerClient;
 import org.baldzhiyski.order.customer.CustomerRes;
+import org.baldzhiyski.order.events.OrderEventPublisher;
 import org.baldzhiyski.order.exception.BusinessException;
 import org.baldzhiyski.order.mapper.OrderLineMapper;
 import org.baldzhiyski.order.mapper.OrderMapper;
@@ -35,14 +36,16 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final OrderLineMapper orderLineMapper;
+    private final OrderEventPublisher orderEventPublisher;
     private final OrderLineRepository orderLineRepository;
 
-    public OrderServiceImpl(CustomerClient customerClient, ProductClient productClient, OrderRepository orderRepository, OrderMapper orderMapper, OrderLineMapper orderLineMapper, OrderLineRepository orderLineRepository) {
+    public OrderServiceImpl(CustomerClient customerClient, ProductClient productClient, OrderRepository orderRepository, OrderMapper orderMapper, OrderLineMapper orderLineMapper, OrderEventPublisher orderEventPublisher, OrderLineRepository orderLineRepository) {
         this.customerClient = customerClient;
         this.productClient = productClient;
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
         this.orderLineMapper = orderLineMapper;
+        this.orderEventPublisher = orderEventPublisher;
         this.orderLineRepository = orderLineRepository;
     }
 
@@ -106,8 +109,9 @@ public class OrderServiceImpl implements OrderService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                // DB committed → finalize inventory
+                // DB committed → finalize inventory + publish event
                 productClient.confirm(orderRef);
+                orderEventPublisher.publishOrderCreated(saved,customer);
             }
 
             @Override
