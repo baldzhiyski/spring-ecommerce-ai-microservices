@@ -1,5 +1,61 @@
 services:
 
+  order-service:
+    build:
+      context: ./services/order
+      dockerfile: Dockerfile
+    container_name: ms_order_service
+    ports:
+      - "${ORDER_SERVICE}:8070"
+    networks:
+      - microservices-net
+    env_file:
+      - .env
+    environment:
+      GRADLE_USER_HOME: /gradle-home
+      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+    restart: unless-stopped
+    volumes:
+      - ./services/order:/app
+      - gradle-cache-orders:/gradle-home
+    command: >
+      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8070 || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 40s
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
+      postgresql:
+        condition: service_started
+    develop:
+      watch:
+        - path: ./services/order/src
+          target: /app/src
+          action: sync
+          ignore:
+            - "**/build/**"
+            - "**/.idea/**"
+            - "**/.git/**"
+        - path: ./services/order/build.gradle
+          target: /app/build.gradle
+          action: sync
+        - path: ./services/order/settings.gradle
+          target: /app/settings.gradle
+          action: sync
+        - path: ./services/order/gradlew
+          action: rebuild
+        - path: ./services/order/gradle
+          action: rebuild
+
+
+
+
   # === Product Service (Spring Boot, hot reload) ===
   product-service:
     build:
