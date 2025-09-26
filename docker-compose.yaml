@@ -1,5 +1,57 @@
 services:
 
+  notification-service:
+    build:
+      context: ./services/notification
+      dockerfile: Dockerfile
+    container_name: ms_notification_service
+    ports:
+      - "${NOTIFICATION_SERVICE}:8777"
+    networks:
+      - microservices-net
+    env_file:
+      - .env
+    environment:
+      GRADLE_USER_HOME: /gradle-home
+      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+    restart: unless-stopped
+    volumes:
+      - ./services/notification:/app
+      - gradle-cache-notifications:/gradle-home
+    command: >
+      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:87777 || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 40s
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
+    develop:
+      watch:
+        - path: ./services/notification/src
+          target: /app/src
+          action: sync
+          ignore:
+            - "**/build/**"
+            - "**/.idea/**"
+            - "**/.git/**"
+        - path: ./services/notification/build.gradle
+          target: /app/build.gradle
+          action: sync
+        - path: ./services/notification/settings.gradle
+          target: /app/settings.gradle
+          action: sync
+        - path: ./services/notification/gradlew
+          action: rebuild
+        - path: ./services/notification/gradle
+          action: rebuild
+
+
   order-service:
     build:
       context: ./services/order
