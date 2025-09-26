@@ -1,25 +1,38 @@
 package org.baldzhiyski.order.controller;
 
-import lombok.AllArgsConstructor;
-import org.baldzhiyski.order.model.Order;
+import lombok.RequiredArgsConstructor;
+
 import org.baldzhiyski.order.model.req.OrderReq;
 import org.baldzhiyski.order.service.OrderService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/orders")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class OrderController {
 
-    private OrderService orderService;
+    private final OrderService orderService;
 
     @PostMapping
     public ResponseEntity<Integer> createOrder(@RequestBody OrderReq order) {
-        return ResponseEntity.ok(this.orderService.createOrder(order));
+        return ResponseEntity.ok(orderService.createOrder(order));
     }
 
+    @GetMapping
+    public ResponseEntity<List<OrderRes>> findAll(
+            @RequestParam(value = "customerId", required = false) String customerId
+    ) {
+        if (customerId != null && !customerId.isBlank()) {
+            return ResponseEntity.ok(orderService.findAllByCustomerId(customerId));
+        }
+        return ResponseEntity.ok(orderService.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderRes> findById(@PathVariable Integer id) {
+        return ResponseEntity.ok(orderService.findById(id));
+    }
 }

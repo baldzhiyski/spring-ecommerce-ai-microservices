@@ -2,6 +2,7 @@ package org.baldzhiyski.order.mapper;
 
 import org.baldzhiyski.order.model.OrderLine;
 import org.baldzhiyski.order.model.req.PurchaseRequest;
+import org.baldzhiyski.order.model.res.OrderLineRes;
 import org.mapstruct.Mapper;
 
 import org.mapstruct.*;
@@ -11,4 +12,6 @@ public interface OrderLineMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "order", ignore = true)
     OrderLine toEntity(PurchaseRequest dto);
+
+    OrderLineRes toRes(OrderLine line);
 }

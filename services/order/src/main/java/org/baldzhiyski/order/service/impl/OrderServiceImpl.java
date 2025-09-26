@@ -1,8 +1,7 @@
 package org.baldzhiyski.order.service.impl;
 
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityNotFoundException;
 import org.baldzhiyski.order.customer.CustomerClient;
-import org.baldzhiyski.order.customer.CustomerRes;
 import org.baldzhiyski.order.events.OrderEventPublisher;
 import org.baldzhiyski.order.exception.BusinessException;
 import org.baldzhiyski.order.mapper.OrderLineMapper;
@@ -11,6 +10,7 @@ import org.baldzhiyski.order.model.Order;
 import org.baldzhiyski.order.model.OrderLine;
 import org.baldzhiyski.order.model.req.OrderReq;
 import org.baldzhiyski.order.model.req.PurchaseRequest;
+import org.baldzhiyski.order.model.res.OrderRes;
 import org.baldzhiyski.order.product.ProductClient;
 import org.baldzhiyski.order.product.ProductRes;
 import org.baldzhiyski.order.product.ReserveCommand;
@@ -19,8 +19,8 @@ import org.baldzhiyski.order.repository.OrderLineRepository;
 import org.baldzhiyski.order.repository.OrderRepository;
 import org.baldzhiyski.order.service.OrderService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import java.math.BigDecimal;
 import java.util.List;
@@ -123,9 +123,33 @@ public class OrderServiceImpl implements OrderService {
             }
         });
 
-        // TODO : Send an event that the notification service will see and send a confirmation email
-
         return saved.getId();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderRes> findAll() {
+        return orderRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(orderMapper::toRes)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderRes> findAllByCustomerId(String customerId) {
+        return orderRepository.findByCustomerIdOrderByCreatedAtDesc(customerId)
+                .stream()
+                .map(orderMapper::toRes)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderRes findById(Integer id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Order %d not found".formatted(id)));
+        return orderMapper.toRes(order);
     }
 }
 
