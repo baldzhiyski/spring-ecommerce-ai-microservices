@@ -10,15 +10,16 @@ import java.util.UUID;
 
 public record OrderCreatedEvent(
         String eventId,
-        String eventType,        // "order.created"
-        String occurredAt,       // ISO-8601
+        String eventType,
+        String occurredAt,
         String orderRef,
         Integer orderId,
         String customerId,
         String customerName,
         String customerEmail,
         BigDecimal totalAmount
-) {
+)
+{
     public static OrderCreatedEvent of(Order order, CustomerRes customer) {
         return new OrderCreatedEvent(
                 UUID.randomUUID().toString(),

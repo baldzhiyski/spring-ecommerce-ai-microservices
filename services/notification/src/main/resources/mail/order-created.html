@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <title th:text="${subject}">Order created</title>
+    <style>
+        body{margin:0;padding:0;background:#f6f7fb}
+        .wrap{width:100%;padding:24px 0}
+        .card{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(22,28,45,.06)}
+        .header{background:#0f172a;color:#fff;padding:20px 24px;font-family:Arial,Helvetica,sans-serif}
+        .brand{font-size:18px;font-weight:bold}
+        .content{padding:24px;font-family:Arial,Helvetica,sans-serif;color:#0f172a}
+        .muted{color:#64748b;font-size:12px}
+        .btn{display:inline-block;background:#2563eb;color:#fff!important;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:bold}
+        table{border-collapse:collapse;width:100%;margin-top:12px}
+        th,td{text-align:left;padding:8px;border-bottom:1px solid #e2e8f0}
+        th{background:#f8fafc}
+    </style>
+</head>
+<body style="background:#f6f7fb;">
+<div class="wrap">
+    <div class="card">
+        <div class="header">
+            <div class="brand" th:text="${brand} ?: 'MyShop'">MyShop</div>
+        </div>
+        <div class="content">
+            <h2 style="margin:0 0 12px 0;">Thanks for your order!</h2>
+            <p style="margin:0 0 16px 0;">
+                Hi <strong th:text="${customerName} ?: 'there'">there</strong>, your order
+                <strong th:text="${orderRef}">#REF</strong> was created successfully.
+            </p>
+
+            <table th:if="${lines}">
+                <thead>
+                <tr><th>Product</th><th>Qty</th><th style="text-align:right;">Unit</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="l : ${lines}">
+                    <td th:text="${l.name}">Item name</td>
+                    <td th:text="${l.qty}">1</td>
+                    <td style="text-align:right;" th:text="${l.price}">€0.00</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <p style="margin-top:12px;">
+                <strong>Total:</strong> <span th:text="${totalAmount}">€0.00</span>
+            </p>
+
+            <p style="margin:20px 0 0 0;" th:if="${ctaUrl}">
+                <a class="btn" th:href="${ctaUrl}" target="_blank" th:text="${ctaText} ?: 'View your order'">View your order</a>
+            </p>
+
+            <p class="muted" style="margin-top:16px;">
+                If you didn’t place this order, please contact support.
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

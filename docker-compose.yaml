@@ -390,3 +390,5 @@ volumes:
   gradle-cache-customer:
   gradle-cache-config:
   gradle-cache-discovery:
+  gradle-cache-orders:
+  gradle-cache-notifications:
