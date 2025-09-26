@@ -28,13 +28,6 @@ public class ProductController {
 
     }
 
-    @PostMapping("/purchase")
-    public ResponseEntity<List<ProductPurchasedResp>> purchaseProduct(@RequestBody List<BuyProductReq> request,
-                                                                      @RequestParam String customerId){
-        return ResponseEntity.ok(productService.purchaseProducts(request,customerId));
-
-    }
-
     @GetMapping("/{productId}")
     public ResponseEntity<ProductRes> getProduct(@PathVariable("productId") Integer productId){
         return ResponseEntity.ok(productService.getProduct(productId));
