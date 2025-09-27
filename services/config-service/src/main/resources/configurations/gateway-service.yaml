@@ -1,29 +1,27 @@
+server:
+  port: 8222
+
 spring:
   cloud:
     gateway:
-      server:
-        webflux:
-          discovery:
-            locator:
-              enabled: true
-              lower-case-service-id: false
-          routes:
-            - id: CUSTOMER-SERVICE
-              uri: lb://CUSTOMER-SERVICE
-              predicates:
-                - Path=/api/v1/customers/**
-            - id: ORDER-SERVICE
-              uri: lb://ORDER-SERVICE
-              predicates:
-                - Path=/api/v1/orders/**
-            - id: PRODUCT-SERVICE
-              uri: lb://PRODUCT-SERVICE
-              predicates:
-                - Path=/api/v1/products/**
-            - id: PAYMENT-SERVICE
-              uri: lb://PAYMENT-SERVICE
-              predicates:
-                - Path=/api/v1/payments/**
-
-server:
-  port: 8222
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: false   # ← allow UPPERCASE serviceIds
+      routes:
+        - id: CUSTOMER-SERVICE
+          uri: lb://CUSTOMER-SERVICE
+          predicates:
+            - Path=/api/v1/customers/**
+        - id: ORDER-SERVICE
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/v1/orders/**
+        - id: PRODUCT-SERVICE
+          uri: lb://PRODUCT-SERVICE
+          predicates:
+            - Path=/api/v1/products/**
+        - id: PAYMENT-SERVICE
+          uri: lb://PAYMENT-SERVICE
+          predicates:
+            - Path=/api/v1/payments/**

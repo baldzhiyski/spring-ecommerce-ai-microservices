@@ -7,7 +7,7 @@ public record BuyProductReq(
 
         @NotNull(message = "Product ID is required")
         @Min(value = 1, message = "Product ID must be a positive integer")
-        Integer id,
+        Integer productId,
 
         @NotNull(message = "Quantity is required")
         @Min(value = 1, message = "Quantity must be at least 1")

@@ -1,5 +1,6 @@
 package org.baldzhiyski.order.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.baldzhiyski.order.model.req.OrderReq;
@@ -19,7 +20,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<PaymentCheckoutRes> createOrder(@RequestBody OrderReq order) {
+    public ResponseEntity<PaymentCheckoutRes> createOrder(@RequestBody @Valid OrderReq order) {
         return ResponseEntity.ok(orderService.createOrder(order));
     }
 

@@ -59,7 +59,7 @@ public class InventoryServiceImpl implements InventoryService {
         //  want[productId] = total requested quantity for that product
         Map<Integer, Integer> want = cmd.items().stream()
                 .collect(Collectors.groupingBy(
-                        BuyProductReq::id,
+                        BuyProductReq::productId,
                         Collectors.summingInt(BuyProductReq::quantity)
                 ));
 
@@ -72,6 +72,11 @@ public class InventoryServiceImpl implements InventoryService {
         //  We fetch and index by id for quick lookups.
         Map<Integer, Product> productsById = productRepo.findAllForUpdateByIdIn(want.keySet())
                 .stream()
+                .peek(p -> {
+                    if (p.getId() == null) {
+                        throw new IllegalStateException("Loaded product with null id");
+                    }
+                })
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
         // === 3) Validate availability: available = onHand - sum(pending, not expired) ===
@@ -122,7 +127,7 @@ public class InventoryServiceImpl implements InventoryService {
         //  can keep a 1:1 relationship with their requested items.
         List<ProductPurchasedResp> priced = cmd.items().stream()
                 .map(i -> {
-                    Product p = productsById.get(i.id());
+                    Product p = productsById.get(i.productId());
                     var discount = pricing.effectiveDiscount(cmd.customerId(), p);
                     var finalUnit = pricing.finalPrice(p.getPrice(), discount);
                     return ProductPurchasedResp.builder()

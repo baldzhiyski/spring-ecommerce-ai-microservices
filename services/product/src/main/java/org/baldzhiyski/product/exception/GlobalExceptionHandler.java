@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.HashMap;
+import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -25,6 +26,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(errors));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    ResponseEntity<?> badRequest(Exception ex) {
+        return ResponseEntity.badRequest().body(err(ex.getMessage()));
     }
 
     @ExceptionHandler(ProductPurchaseException.class)
@@ -43,5 +49,9 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .status(HttpStatus.NOT_FOUND.toString())
                 .build();
+    }
+    private Map<String,Object> err(String msg){
+        return Map.of("timestamp", java.time.OffsetDateTime.now().toString(),
+                "error", msg);
     }
 }
