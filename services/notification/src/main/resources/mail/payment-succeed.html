@@ -1,48 +1,99 @@
 <!doctype html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width"/>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
     <title th:text="${subject}">Payment succeeded</title>
     <style>
-        body{margin:0;padding:0;background:#f0fdf4}
-        .wrap{width:100%;padding:24px 0}
-        .card{max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(22,28,45,.06);border:1px solid #dcfce7}
-        .header{background:#16a34a;color:#fff;padding:20px 24px;font-family:Arial,Helvetica,sans-serif}
-        .brand{font-size:18px;font-weight:bold}
-        .content{padding:24px;font-family:Arial,Helvetica,sans-serif;color:#0f172a}
-        .muted{color:#64748b;font-size:12px}
-        .btn{display:inline-block;background:#16a34a;color:#fff!important;text-decoration:none;padding:10px 16px;border-radius:8px;font-weight:bold}
-        .kv{margin:0 0 6px 0}
-        .kv span{color:#64748b}
+        /* Client resets */
+        body,table,td,a{ -webkit-text-size-adjust:100%; -ms-text-size-adjust:100% }
+        table,td{ mso-table-lspace:0pt; mso-table-rspace:0pt }
+        img{ -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:none }
+        a{ text-decoration:none }
+        table{ border-collapse:collapse !important }
+        body{ margin:0 !important; padding:0 !important; width:100% !important; background:#f0fdf4 }
+        /* Responsive */
+        @media screen and (max-width:600px){
+            .container{ width:100% !important }
+            .px{ padding-left:16px !important; padding-right:16px !important }
+        }
     </style>
 </head>
-<body style="background:#f0fdf4;">
-<div class="wrap">
-    <div class="card">
-        <div class="header">
-            <div class="brand" th:text="${brand} ?: 'MyShop'">MyShop</div>
-        </div>
-        <div class="content">
-            <h2 style="margin:0 0 12px 0;">Payment received ✅</h2>
-            <p style="margin:0 0 16px 0;">
-                Hi <strong th:text="${customerName} ?: 'there'">there</strong>, we’ve received your payment.
-            </p>
-
-            <p class="kv"><span>Order:</span> <strong th:text="${orderRef}">#REF</strong></p>
-            <p class="kv"><span>Payment ref:</span> <strong th:text="${paymentRef}">#PMT</strong></p>
-            <p class="kv"><span>Amount:</span> <strong th:text="${amount}">€0.00</strong></p>
-            <p class="kv" th:if="${method}"><span>Method:</span> <strong th:text="${method}">Card</strong></p>
-
-            <p style="margin:20px 0 0 0;" th:if="${ctaUrl}">
-                <a class="btn" th:href="${ctaUrl}" target="_blank" th:text="${ctaText} ?: 'View your order'">View your order</a>
-            </p>
-
-            <p class="muted" style="margin-top:16px;">
-                A receipt has been generated for your records.
-            </p>
-        </div>
-    </div>
+<body style="margin:0; padding:0; background:#f0fdf4;">
+<!-- Preheader (hidden) -->
+<div style="display:none; font-size:1px; color:#f0fdf4; line-height:1; max-height:0; max-width:0; opacity:0; overflow:hidden;">
+    Payment received for order [[${orderRef}]].
 </div>
+
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr>
+        <td align="center" style="padding:24px 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="container" style="width:600px; max-width:600px; background:#ffffff; border:1px solid #dcfce7; border-radius:12px; box-shadow:0 2px 12px rgba(22,28,45,.06);">
+                <!-- Header / Brand -->
+                <tr>
+                    <td align="left" style="background:#16a34a; color:#ffffff; padding:20px 24px; border-top-left-radius:12px; border-top-right-radius:12px; font-family:Arial,Helvetica,sans-serif;">
+                        <span class="brand" th:text="${brand} ?: 'MyShop'" style="font-size:18px; font-weight:bold;">MyShop</span>
+                    </td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                    <td class="px" align="left" style="padding:24px; font-family:Arial,Helvetica,sans-serif; color:#0f172a;">
+                        <h2 style="margin:0 0 12px 0; font-size:22px; line-height:1.3;">Payment received ✅</h2>
+                        <p style="margin:0 0 16px 0; font-size:14px; line-height:1.6;">
+                            Hi <strong th:text="${customerName} ?: 'there'">there</strong>, we’ve received your payment.
+                        </p>
+
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 8px 0;">
+                            <tr>
+                                <td style="color:#64748b; font-size:12px; padding:0 0 4px 0;">Order</td>
+                                <td align="right" style="font-size:14px;"><strong th:text="${orderRef}">#REF</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="color:#64748b; font-size:12px; padding:0 0 4px 0;">Payment ref</td>
+                                <td align="right" style="font-size:14px;"><strong th:text="${paymentRef}">#PMT</strong></td>
+                            </tr>
+                            <tr>
+                                <td style="color:#64748b; font-size:12px; padding:0 0 4px 0;">Amount</td>
+                                <td align="right" style="font-size:14px;"><strong th:text="${amount}">€0.00</strong></td>
+                            </tr>
+                            <tr th:if="${method}">
+                                <td style="color:#64748b; font-size:12px; padding:0 0 4px 0;">Method</td>
+                                <td align="right" style="font-size:14px;"><strong th:text="${method}">Card</strong></td>
+                            </tr>
+                        </table>
+
+                        <div th:if="${ctaUrl}" style="margin:20px 0 0 0;">
+                            <!--[if mso]>
+                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word"
+                              href="[[${ctaUrl}]]" style="height:40px;v-text-anchor:middle;width:220px;" arcsize="12%" stroke="f" fillcolor="#16a34a">
+                              <w:anchorlock/>
+                              <center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;">
+                                [[${ctaText} ?: 'View your order']]
+                              </center>
+                            </v:roundrect>
+                            <![endif]-->
+                            <a th:href="${ctaUrl}" target="_blank"
+                               style="background:#16a34a; color:#ffffff; display:inline-block; padding:12px 18px; border-radius:8px; font-weight:bold; font-size:14px;">
+                                <span th:text="${ctaText} ?: 'View your order'">View your order</span>
+                            </a>
+                        </div>
+
+                        <p style="margin:16px 0 0 0; font-size:12px; color:#64748b;">
+                            A receipt has been generated for your records.
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td align="center" style="padding:14px 24px 20px; font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#64748b;">
+                        © <span th:text="${#dates.format(#dates.createNow(),'yyyy')}">2025</span> <span th:text="${brand} ?: 'MyShop'">MyShop</span>. All rights reserved.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 </body>
 </html>
