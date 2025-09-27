@@ -31,3 +31,5 @@ application:
 app:
   mq:
     exchange: app.events
+    queues:
+      payments: notifications.payments
