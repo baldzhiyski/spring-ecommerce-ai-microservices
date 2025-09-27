@@ -4,24 +4,37 @@ server:
 spring:
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: false   # ← allow UPPERCASE serviceIds
-      routes:
-        - id: CUSTOMER-SERVICE
-          uri: lb://CUSTOMER-SERVICE
-          predicates:
-            - Path=/api/v1/customers/**
-        - id: ORDER-SERVICE
-          uri: lb://ORDER-SERVICE
-          predicates:
-            - Path=/api/v1/orders/**
-        - id: PRODUCT-SERVICE
-          uri: lb://PRODUCT-SERVICE
-          predicates:
-            - Path=/api/v1/products/**
-        - id: PAYMENT-SERVICE
-          uri: lb://PAYMENT-SERVICE
-          predicates:
-            - Path=/api/v1/payments/**
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              # set to true if your registry stores service IDs in lowercase
+              lower-case-service-id: false
+          routes:
+            - id: customer-service
+              uri: lb://CUSTOMER-SERVICE
+              predicates:
+                - Path=/api/v1/customers/**
+              # filters:
+              #   - StripPrefix=2    # if your downstream doesn't expect /api/v1
+
+            - id: order-service
+              uri: lb://ORDER-SERVICE
+              predicates:
+                - Path=/api/v1/orders/**
+
+            - id: order-lines-service
+              uri: lb://ORDER-SERVICE
+              predicates:
+                - Path=/api/v1/order-lines/**
+
+            - id: product-service
+              uri: lb://PRODUCT-SERVICE
+              predicates:
+                - Path=/api/v1/products/**
+
+            - id: payment-service
+              uri: lb://PAYMENT-SERVICE
+              predicates:
+                - Path=/api/v1/payments/**
