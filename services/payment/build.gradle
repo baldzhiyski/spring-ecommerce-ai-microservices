@@ -29,6 +29,7 @@ ext {
 }
 
 dependencies {
+    implementation 'com.stripe:stripe-java:24.0.0'
     implementation 'org.mapstruct:mapstruct:1.6.2'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.2'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'

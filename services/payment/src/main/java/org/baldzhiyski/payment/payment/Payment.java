@@ -24,6 +24,13 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    /** Stripe PaymentIntent id (or Session payment_intent) */
+    @Column(nullable = false, unique = true)
+    private String paymentRef;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
+
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)

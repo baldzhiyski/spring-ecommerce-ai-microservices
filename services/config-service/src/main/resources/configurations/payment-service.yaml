@@ -24,3 +24,9 @@ server:
 app:
   mq:
     exchange: app.events
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}   # from Stripe CLI
+  success-url: ${STRIPE_SUCCESS_URL:http://payment-service:8030/demo/success}
+  cancel-url:  ${STRIPE_CANCEL_URL:http://payment-service:8030/demo/cancel}
+  currency:    ${STRIPE_CURRENCY:EUR}
