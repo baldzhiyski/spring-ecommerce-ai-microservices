@@ -24,6 +24,12 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    private String sessionId;
+
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
+
+
     private String reference;
 
     private BigDecimal totalAmount;

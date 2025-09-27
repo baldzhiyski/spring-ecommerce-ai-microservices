@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.baldzhiyski.order.model.req.OrderReq;
 import org.baldzhiyski.order.model.res.OrderRes;
+import org.baldzhiyski.order.model.res.PaymentCheckoutRes;
 import org.baldzhiyski.order.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<Integer> createOrder(@RequestBody OrderReq order) {
+    public ResponseEntity<PaymentCheckoutRes> createOrder(@RequestBody OrderReq order) {
         return ResponseEntity.ok(orderService.createOrder(order));
     }
 
