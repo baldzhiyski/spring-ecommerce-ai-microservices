@@ -12,6 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
+@Table(name = "order_lines")
 public class OrderLine {
 
     @Id
