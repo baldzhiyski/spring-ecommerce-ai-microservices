@@ -37,6 +37,14 @@ dependencies {
 
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 
+    implementation("org.mapstruct:mapstruct:1.5.5.Final")         // or 1.6.0.Final if you prefer
+    annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
+
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+
+    // Helps Lombok + MapStruct play nicely (builders, etc.)
+    annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'

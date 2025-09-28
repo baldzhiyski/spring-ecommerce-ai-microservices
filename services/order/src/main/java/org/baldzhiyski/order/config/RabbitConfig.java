@@ -1,6 +1,10 @@
 package org.baldzhiyski.order.config;
 
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +29,18 @@ public class RabbitConfig {
     @Bean
     Binding bindFailed(Queue paymentsQueue, TopicExchange appEventsExchange) {
         return BindingBuilder.bind(paymentsQueue).to(appEventsExchange).with("payment.failed");
+    }
+
+    @Bean
+    public MessageConverter jackson2MessageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory cf, MessageConverter mc) {
+        RabbitTemplate rt = new RabbitTemplate(cf);
+        rt.setMessageConverter(mc);
+        return rt;
     }
 }
 

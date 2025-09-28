@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://postgresql:5432/products
-    username: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/products
+    username: ${POSTGRES_USER:baldzhiyski}
+    password: ${POSTGRES_PASSWORD:super_strong_pg_password}
     driver-class-name: org.postgresql.Driver
 
 
@@ -17,8 +17,8 @@ spring:
     enabled: true
     baseline-description: "init"
     baseline-version: 0
-    user: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
+    username: ${POSTGRES_USER:baldzhiyski}
+    password: ${POSTGRES_PASSWORD:super_strong_pg_password}
 
 
 server:

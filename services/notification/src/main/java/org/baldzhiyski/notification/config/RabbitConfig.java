@@ -2,6 +2,8 @@ package org.baldzhiyski.notification.config;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,7 +48,14 @@ public class RabbitConfig {
 
     // Make RabbitTemplate send/receive JSON automatically
     @Bean
-    public MessageConverter jacksonMessageConverter() {
+    public MessageConverter jackson2MessageConverter() {
         return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(ConnectionFactory cf, MessageConverter mc) {
+        RabbitTemplate rt = new RabbitTemplate(cf);
+        rt.setMessageConverter(mc);
+        return rt;
     }
 }

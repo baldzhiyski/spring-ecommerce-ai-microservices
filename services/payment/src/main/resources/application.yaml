@@ -3,4 +3,4 @@ spring:
     name: payment-service
 
   config:
-    import: optional:configserver:http://config-service:9999
+    import: optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:9999

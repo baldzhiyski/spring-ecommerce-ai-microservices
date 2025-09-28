@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.baldzhiyski.order.customer.CustomerClient;
+import org.baldzhiyski.order.customer.CustomerRes;
 import org.baldzhiyski.order.events.OrderEventPublisher;
 import org.baldzhiyski.order.exception.BusinessException;
 import org.baldzhiyski.order.mapper.OrderLineMapper;
@@ -12,6 +13,7 @@ import org.baldzhiyski.order.model.Order;
 import org.baldzhiyski.order.model.OrderLine;
 import org.baldzhiyski.order.model.OrderStatus;
 import org.baldzhiyski.order.model.PaymentMethod;
+import org.baldzhiyski.order.model.req.Customer;
 import org.baldzhiyski.order.model.req.OrderReq;
 import org.baldzhiyski.order.model.req.PaymentCheckoutReq;
 import org.baldzhiyski.order.model.req.PurchaseRequest;
@@ -71,8 +73,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public PaymentCheckoutRes createOrder(OrderReq orderReq) {
         // 1) validate customer (external)
-        var customer = customerClient.getCustomerById(orderReq.customerId())
-                .orElseThrow(() -> new BusinessException("Customer %s not found".formatted(orderReq.customerId())));
+        CustomerRes customer = customerClient.getCustomerById(orderReq.customerId());
 
         // 2) generate orderRef
         String orderRef = (orderReq.reference() != null) ? orderReq.reference() : UUID.randomUUID().toString();
@@ -118,7 +119,7 @@ public class OrderServiceImpl implements OrderService {
                 orderRef,
                 PaymentMethod.CREDIT_CARD,
                 saved.getId(),
-                new PaymentCheckoutReq.Customer(
+                new Customer(
                         customer.id(), customer.email(), customer.firstName(), customer.lastName()
                 ),
                 BigDecimal.valueOf(amountMinor) // payment-service expects .longValue() -> minor units
@@ -150,9 +151,10 @@ public class OrderServiceImpl implements OrderService {
     // -----------------------------------------------------------------------
     @RabbitListener(queues = "${app.mq.queues.payments}", concurrency = "3-12")
     @Transactional // ensures DB status updates participate in a tx per message
-    public void onPaymentEvents(Message message, JsonNode payload) {
-        String rk = message.getMessageProperties().getReceivedRoutingKey(); // payment.succeeded | payment.failed
-        String orderRef = text(payload, "orderRef");
+    public void onPaymentEvents(Message message, Map<String, Object> payload) {
+        String rk = message.getMessageProperties().getReceivedRoutingKey(); // "payment.succeeded" | "payment.failed"
+
+        String orderRef = asText(payload, "orderRef");
         if (orderRef == null || orderRef.isBlank()) return;
 
         try {
@@ -163,7 +165,6 @@ public class OrderServiceImpl implements OrderService {
                 // 2) mark order paid (idempotent)
                 orderRepository.updateStatusByReference(orderRef, OrderStatus.PAID);
 
-
                 log.info("Order {} marked PAID and inventory confirmed", orderRef);
 
             } else if ("payment.failed".equals(rk)) {
@@ -173,7 +174,6 @@ public class OrderServiceImpl implements OrderService {
                 // 2) mark order payment failed
                 orderRepository.updateStatusByReference(orderRef, OrderStatus.PAYMENT_FAILED);
 
-
                 log.info("Order {} marked PAYMENT_FAILED and reservation cancelled", orderRef);
             }
         } catch (Exception ex) {
@@ -181,6 +181,12 @@ public class OrderServiceImpl implements OrderService {
             log.error("Error handling {} for {}: {}", rk, orderRef, ex.getMessage(), ex);
             throw ex;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String asText(Map<String, Object> payload, String field) {
+        Object v = payload.get(field);
+        return (v == null) ? null : String.valueOf(v);
     }
 
     private static String text(JsonNode node, String field) {

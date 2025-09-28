@@ -60,8 +60,11 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public CustomerRes getCustomerById(String id) {
-        return customerMapper.toDTO(this.customerRepository.findById(id)
-                .orElseThrow(() -> new CustomerNotFoundException(String.format("Customer with id %s does not exist !",id))));
+        Customer customer = this.customerRepository.findById(id)
+                .orElseThrow(() -> new CustomerNotFoundException(String.format("Customer with id %s does not exist !", id)));
+        CustomerRes dto = customerMapper.toDTO(customer);
+
+        return dto;
     }
 
     @Override

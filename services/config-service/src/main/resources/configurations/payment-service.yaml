@@ -1,13 +1,13 @@
 spring:
   rabbitmq:
-    host: ${RABBITMQ_HOST:rabbitmq}
+    host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_AMQP_PORT:5672}
-    username: ${RABBITMQ_DEFAULT_USER}
-    password: ${RABBITMQ_DEFAULT_PASS}
+    username: ${RABBITMQ_DEFAULT_USER:rabbit_user}
+    password: ${RABBITMQ_DEFAULT_PASS:rabbit_strong_password}
   datasource:
-    url: jdbc:postgresql://postgresql:5432/payments
-    username: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/payments
+    username: ${POSTGRES_USER:baldzhiyski}
+    password: ${POSTGRES_PASSWORD:super_strong_pg_password}
     driver-class-name: org.postgresql.Driver
 
 

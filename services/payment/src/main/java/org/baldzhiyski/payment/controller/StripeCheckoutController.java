@@ -1,5 +1,6 @@
 package org.baldzhiyski.payment.controller;
 
+import com.stripe.param.checkout.SessionCreateParams;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.baldzhiyski.payment.config.StripeProps;
@@ -13,34 +14,47 @@ import java.util.Map;
 @RequestMapping("/api/v1/payments")
 @RequiredArgsConstructor
 class StripeCheckoutController {
+
     private final StripeProps stripe;
 
     @PostMapping("/checkout-session")
     public Map<String,Object> createSession(@RequestBody @Valid PaymentReq req) throws Exception {
         com.stripe.Stripe.apiKey = stripe.secretKey();
 
-        var params = com.stripe.param.checkout.SessionCreateParams.builder()
-                .setMode(com.stripe.param.checkout.SessionCreateParams.Mode.PAYMENT)
+        var params = SessionCreateParams.builder()
+                .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(stripe.successUrl() + "?orderRef=" + req.orderReference())
                 .setCancelUrl(stripe.cancelUrl()  + "?orderRef=" + req.orderReference())
-                .addPaymentMethodType(com.stripe.param.checkout.SessionCreateParams.PaymentMethodType.CARD)
+                .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                 .setCustomerEmail(req.customer().email())
                 .addLineItem(
-                        com.stripe.param.checkout.SessionCreateParams.LineItem.builder()
+                        SessionCreateParams.LineItem.builder()
                                 .setQuantity(1L)
-                                .setPriceData(com.stripe.param.checkout.SessionCreateParams.LineItem.PriceData.builder()
+                                .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
                                         .setCurrency(stripe.currency())
                                         .setUnitAmount(req.amount().longValue())
-                                        .setProductData(com.stripe.param.checkout.SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                        .setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
                                                 .setName("Order " + req.orderReference())
                                                 .build())
                                         .build())
                                 .build())
+                // metadata on the Session (optional)
                 .putMetadata("orderRef", req.orderReference())
                 .putMetadata("customerId", req.customer().id())
-                .putMetadata("customerFullName",String.join(" ",req.customer().firstName(),req.customer().lastName()))
+                .putMetadata("customerFullName", String.join(" ", req.customer().firstName(), req.customer().lastName()))
                 .putMetadata("customerEmail", req.customer().email())
+                // ✅ metadata on the PaymentIntent created by Checkout
+                .setPaymentIntentData(
+                        SessionCreateParams.PaymentIntentData.builder()
+                                .putMetadata("orderRef", req.orderReference())
+                                .putMetadata("customerId", req.customer().id())
+                                .putMetadata("paymentMethod",req.paymentMethod().toString())
+                                .putMetadata("customerFullName", String.join(" ", req.customer().firstName(), req.customer().lastName()))
+                                .putMetadata("customerEmail", req.customer().email())
+                                .build()
+                )
                 .build();
+
 
         var session = com.stripe.model.checkout.Session.create(params);
         return Map.of(

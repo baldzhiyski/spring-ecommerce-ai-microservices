@@ -12,10 +12,4 @@ public record PaymentCheckoutReq(
         Customer customer,
         BigDecimal amount
 ) {
-    public record Customer(
-            String id,
-            String email,
-            String firstName,
-            String lastName
-    ) {}
 }

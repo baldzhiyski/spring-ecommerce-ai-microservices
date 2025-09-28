@@ -1,11 +1,7 @@
 package org.baldzhiyski.payment.events;
 
 import lombok.RequiredArgsConstructor;
-import org.baldzhiyski.payment.payment.Payment;
-import org.baldzhiyski.payment.payment.req.Customer;
-import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
@@ -22,21 +18,26 @@ public class PaymentEventPublisher {
     private final TopicExchange appEventsExchange;
 
     public void paymentSucceeded(String orderRef, String paymentRef, long amountMinor,
-                                 String currency,String fullName, String email) {
-        var event = Map.of(
-                "eventId", UUID.randomUUID().toString(),
-                "eventType", "payment.succeeded",
-                "occurredAt", OffsetDateTime.now().toString(),
-                "orderRef", orderRef,
-                "paymentRef", paymentRef,
-                "amount", BigDecimal.valueOf(amountMinor).movePointLeft(2),
-                "currency", currency,
-                "customerFullName",fullName,
-                "customerEmail", email,
-                "method", "stripe"
-        );
+                                 String currency, String fullName, String email, String receiptUrl, String paymentMethod) {
+        Map<String, Object> event = new HashMap<>();
+        event.put("eventId", UUID.randomUUID().toString());
+        event.put("eventType", "payment.succeeded");
+        event.put("occurredAt", OffsetDateTime.now().toString());
+        event.put("orderRef", orderRef);
+        event.put("paymentRef", paymentRef);
+        event.put("amount", BigDecimal.valueOf(amountMinor).movePointLeft(2));
+        putIfNotBlank(event, "currency", currency);
+        putIfNotBlank(event, "customerFullName", fullName);
+        putIfNotBlank(event, "customerEmail", email);
+        putIfNotBlank(event, "receiptUrl", receiptUrl);
+        putIfNotBlank(event, "paymentMethod", paymentMethod);
+        event.put("method", "stripe");
         rabbit.convertAndSend(appEventsExchange.getName(), "payment.succeeded", event);
     }
+    private static void putIfNotBlank(Map<String, Object> m, String key, String value) {
+        if (value != null && !value.isBlank()) m.put(key, value);
+    }
+
 
     public void paymentFailed(
             String orderRef,
