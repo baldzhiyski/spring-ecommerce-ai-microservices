@@ -29,6 +29,7 @@ ext {
 }
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation("com.stripe:stripe-java:25.0.0") // or the latest available
     implementation 'org.mapstruct:mapstruct:1.6.2'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.2'

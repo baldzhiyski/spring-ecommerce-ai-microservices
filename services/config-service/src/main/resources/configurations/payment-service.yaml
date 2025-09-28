@@ -1,4 +1,14 @@
 spring:
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+  mail:
+    host: ${MAIL_HOST:localhost}
+    smtp-port: ${MAILDEV_SMTP_PORT:1025}
+    web-port: ${MAILDEV_WEB_PORT:1080}   # add this for MailDev web UI
+
+
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_AMQP_PORT:5672}
@@ -27,6 +37,8 @@ app:
 stripe:
   secret-key: ${STRIPE_SECRET_KEY}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}   # from Stripe CLI
-  success-url: ${STRIPE_SUCCESS_URL:http://localhost:8030/demo/success}
-  cancel-url:  ${STRIPE_CANCEL_URL:http://localhost:8030/demo/cancel}
+  success-url: ${STRIPE_SUCCESS_URL:http://localhost:8030/payment/success}
+  cancel-url:  ${STRIPE_CANCEL_URL:http://localhost:8030/payment/cancel}
   currency:    ${STRIPE_CURRENCY:EUR}
+
+

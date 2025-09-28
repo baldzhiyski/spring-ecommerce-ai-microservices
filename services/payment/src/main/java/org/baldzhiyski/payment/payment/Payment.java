@@ -33,10 +33,6 @@ public class Payment {
 
     private BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
-    private PaymentMethod paymentMethod;
-
-
     private String orderRef;
 
     @CreatedDate

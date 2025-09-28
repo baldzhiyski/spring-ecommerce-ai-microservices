@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Payment Cancelled • Baldzhiyski Shop</title>
+
+    <style>
+        :root{
+            --bg1:#1a0e0e; --bg2:#2a1a1a;
+            --glass: rgba(255,255,255,.08);
+            --stroke: rgba(255,255,255,.18);
+            --text:#fef2f2; --muted:#fca5a5; --accent:#f87171; --accent-strong:#dc2626;
+        }
+        @media (prefers-color-scheme: light){
+            :root{
+                --bg1:#fff0f0; --bg2:#ffeaea;
+                --glass: rgba(255,255,255,.65);
+                --stroke: rgba(0,0,0,.08);
+                --text:#1f0e0e; --muted:#991b1b; --accent:#dc2626; --accent-strong:#b91c1c;
+            }
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{
+            margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+            color:var(--text); background: radial-gradient(1000px 600px at -10% 10%, #fb7185 0%, transparent 40%),
+        radial-gradient(1000px 600px at 120% 120%, #ef4444 0%, transparent 40%),
+        linear-gradient(120deg, var(--bg1), var(--bg2));
+            display:grid; place-items:center; padding:28px;
+        }
+
+        .card{
+            width:min(720px, 92vw);
+            background:var(--glass);
+            backdrop-filter: blur(14px);
+            border:1px solid var(--stroke);
+            border-radius:20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.25);
+            padding:28px;
+        }
+
+        .header{
+            display:flex; align-items:center; gap:18px; margin-bottom:8px;
+        }
+        .badge{
+            display:inline-flex; align-items:center; justify-content:center;
+            width:54px; height:54px; border-radius:16px; background:rgba(248,113,113,.15);
+            border:1px solid rgba(248,113,113,.35);
+        }
+        .cross{
+            width:28px; height:28px; stroke:var(--accent); stroke-width:3.5; fill:none; stroke-linecap:round;
+        }
+        h1{font-size:clamp(1.4rem, 1.1rem + 1.2vw, 1.9rem); margin:0}
+        .sub{color:var(--muted); margin:.25rem 0 1.1rem}
+
+        .summary{margin:20px 0; padding:16px; border-radius:14px; border:1px dashed var(--stroke)}
+        .summary strong{color:var(--accent)}
+
+        .actions{display:flex; gap:12px; margin-top:18px; flex-wrap:wrap}
+        .btn{
+            padding:12px 16px; border-radius:12px; font-weight:700; font-size:.98rem; text-decoration:none;
+            display:inline-flex; align-items:center; gap:10px; transition: transform .08s ease, box-shadow .2s ease;
+        }
+        .btn:active{transform:translateY(1px)}
+        .btn-primary{background:linear-gradient(180deg, var(--accent) 0%, var(--accent-strong) 100%); color:white}
+        .btn-ghost{background:transparent; color:var(--text); border:1px solid var(--stroke)}
+
+        .footer{margin-top:18px; border-top:1px solid var(--stroke); padding-top:14px; color:var(--muted); font-size:.92rem; display:flex; justify-content:space-between}
+        .brand{font-weight:700}
+        @media (max-width:640px){.footer{flex-direction:column; align-items:flex-start}}
+    </style>
+</head>
+<body>
+<main class="card">
+    <header class="header">
+        <div class="badge">
+            <svg class="cross" viewBox="0 0 24 24">
+                <line x1="6" y1="6" x2="18" y2="18"/>
+                <line x1="6" y1="18" x2="18" y2="6"/>
+            </svg>
+        </div>
+        <div>
+            <h1>Payment Cancelled</h1>
+            <p class="sub">Your payment was not completed. You can try again below.</p>
+        </div>
+    </header>
+
+    <div class="summary">
+        Order <strong th:text="${orderRef}">ORD-2025-0001</strong> is awaiting payment.
+    </div>
+
+    <div class="actions">
+        <a class="btn btn-primary" href="/" aria-label="Retry payment">Try again</a>
+        <a class="btn btn-ghost" th:href="${mailDevUrl}" target="_blank">View email (MailDev)</a>
+    </div>
+
+    <footer class="footer">
+        <div>No charges have been made to your card.</div>
+        <div class="brand">Baldzhiyski Shop</div>
+    </footer>
+</main>
+</body>
+</html>
