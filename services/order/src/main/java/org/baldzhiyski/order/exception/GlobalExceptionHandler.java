@@ -3,65 +3,212 @@ package org.baldzhiyski.order.exception;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.baldzhiyski.order.model.res.ErrorResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.OffsetDateTime;
+import java.util.*;
 
+/**
+ * Global exception handler with robust Feign error pass-through.
+ */
 @RestControllerAdvice
+@RequiredArgsConstructor
+@Slf4j
 public class GlobalExceptionHandler {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
+    private static final int RAW_BODY_LIMIT = 4096;
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<String> handleBusinessException(BusinessException e) {
-        // If BusinessException always means 404 for you, keep it like this.
+        // If BusinessException always maps to 404 for your use case:
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body("Customer Not Found : " + e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        HashMap<String, String> errors = new HashMap<>();
-        e.getBindingResult().getFieldErrors().forEach(fe -> errors.put(fe.getField(), fe.getDefaultMessage()));
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(errors));
+        Map<String, String> errors = new LinkedHashMap<>();
+        for (FieldError fe : e.getBindingResult().getFieldErrors()) {
+            errors.put(fe.getField(), fe.getDefaultMessage());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(errors));
     }
 
-    // NEW: catch Feign exceptions and pass-through downstream status + message
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<Map<String, Object>> handleFeign(FeignException ex) {
-        int status = ex.status(); // 404 in your case
-        String raw = ex.contentUTF8(); // OpenFeign 12+: convenient accessor
+        // Upstream status -> try to map to Spring HttpStatus, else use 502
+        int upstreamStatus = ex.status();
+        HttpStatus status = Optional.ofNullable(HttpStatus.resolve(upstreamStatus))
+                .orElse(HttpStatus.BAD_GATEWAY);
 
-        // Fallback if not available:
-        if (raw == null || raw.isBlank()) {
-            raw = ex.responseBody()
-                    .map(buf -> StandardCharsets.UTF_8.decode(buf).toString())
-                    .orElse("");
+        // Method + URL context (if available)
+        String method = ex.request() != null ? ex.request().httpMethod().name() : "UNKNOWN";
+        String url = ex.request() != null ? ex.request().url() : "UNKNOWN";
+
+        // Extract charset from headers; default to UTF-8
+        Charset charset = extractCharset(ex.responseHeaders())
+                .orElse(StandardCharsets.UTF_8);
+
+        // Read body bytes safely
+        byte[] bytes = ex.responseBody()
+                .map(ByteBuffer::array)
+                .orElseGet(() -> {
+                    try { return Optional.ofNullable(ex.content()).orElse(new byte[0]); }
+                    catch (Throwable ignore) { return new byte[0]; }
+                });
+
+        String raw = safeDecode(bytes, charset);
+        if (raw.length() > RAW_BODY_LIMIT) {
+            raw = raw.substring(0, RAW_BODY_LIMIT) + "… [truncated]";
         }
 
-        // Try to mirror Customer service response if JSON
-        Map<String, Object> body = new HashMap<>();
-        if (!raw.isBlank()) {
-            try {
-                JsonNode node = objectMapper.readTree(raw);
-                // copy known fields if present
-                if (node.has("message")) body.put("message", node.get("message").asText());
-                if (node.has("status"))  body.put("status",  node.get("status").asText());
-            } catch (Exception ignored) {
-                // not JSON → use raw string
+        // Try to extract a human message
+        String message = extractMessageFromRaw(raw);
+        if (isBlank(message)) {
+            message = ex.getMessage() != null ? ex.getMessage() : status.getReasonPhrase();
+        }
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", OffsetDateTime.now().toString());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", message);
+        body.put("upstreamStatus", upstreamStatus);
+        body.put("method", method);
+        body.put("url", url);
+        if (!isBlank(raw)) {
+            // include short upstream body to help clients/debug (trimmed above)
+            body.put("upstreamBody", raw);
+        }
+
+        log.warn("Feign upstream error: {} {} -> {} (mapped {})", method, url, upstreamStatus, status);
+        return ResponseEntity.status(status)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body);
+    }
+
+    /* ===================== helpers ===================== */
+
+    private String extractMessageFromRaw(String raw) {
+        if (isBlank(raw)) return "";
+
+        // Try JSON bodies first
+        try {
+            JsonNode node = objectMapper.readTree(raw);
+
+            // RFC 7807 Problem Details
+            // { "type": "...", "title": "...", "status": 400, "detail": "..." }
+            String title = text(node, "title");
+            String detail = text(node, "detail");
+            if (!isBlank(title) || !isBlank(detail)) {
+                return joinNonBlank(" - ", title, detail);
             }
-        }
-        if (body.isEmpty()) {
-            body.put("message", ex.getMessage());
-        }
 
-        return ResponseEntity.status(status).body(body);
+            // Spring default error body
+            // { "timestamp": "...", "status": 400, "error": "Bad Request", "message": "X", "path": "/..." }
+            String springMessage = text(node, "message");
+            if (!isBlank(springMessage)) return springMessage;
+
+            // OAuth-ish
+            // { "error": "invalid_request", "error_description": "..." }
+            String errDesc = text(node, "error_description");
+            String err = text(node, "error");
+            if (!isBlank(errDesc) || !isBlank(err)) {
+                return joinNonBlank(": ", err, errDesc);
+            }
+
+            // Validation arrays
+            // { "errors": [ {"defaultMessage":"..."}, ... ] }
+            if (node.hasNonNull("errors") && node.get("errors").isArray() && !node.get("errors").isEmpty()) {
+                JsonNode first = node.get("errors").get(0);
+                String dm = text(first, "defaultMessage");
+                if (!isBlank(dm)) return dm;
+                String m = text(first, "message");
+                if (!isBlank(m)) return m;
+            }
+
+            // Problem+JSON violations
+            // { "violations": [ {"message": "..."} ] }
+            if (node.hasNonNull("violations") && node.get("violations").isArray() && !node.get("violations").isEmpty()) {
+                String vmsg = text(node.get("violations").get(0), "message");
+                if (!isBlank(vmsg)) return vmsg;
+            }
+
+            // Common custom fields
+            for (String k : List.of("msg", "reason", "description", "detailMessage", "cause")) {
+                String v = text(node, k);
+                if (!isBlank(v)) return v;
+            }
+
+            // Unknown JSON shape → return raw JSON
+            return raw;
+
+        } catch (Exception ignore) {
+            // Not JSON → return plain text
+            return raw;
+        }
+    }
+
+    private static Optional<Charset> extractCharset(Map<String, Collection<String>> headers) {
+        try {
+            Collection<String> cts = headers.getOrDefault(HttpHeaders.CONTENT_TYPE, List.of());
+            for (String ct : cts) {
+                if (ct == null) continue;
+                // e.g., "application/json; charset=UTF-8"
+                for (String part : ct.split(";")) {
+                    String p = part.trim();
+                    int eq = p.indexOf('=');
+                    if (eq > 0) {
+                        String key = p.substring(0, eq).trim().toLowerCase(Locale.ROOT);
+                        String val = p.substring(eq + 1).trim().replace("\"", "");
+                        if ("charset".equals(key)) {
+                            return Optional.of(Charset.forName(val));
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignore) {}
+        return Optional.empty();
+    }
+
+    private static String safeDecode(byte[] bytes, Charset cs) {
+        if (bytes == null || bytes.length == 0) return "";
+        try { return new String(bytes, cs); } catch (Throwable e) { return ""; }
+    }
+
+    private static String text(JsonNode node, String field) {
+        if (node == null) return null;
+        JsonNode v = node.get(field);
+        return (v == null || v.isNull()) ? null : v.asText();
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.isBlank();
+    }
+
+    private static String joinNonBlank(String sep, String... parts) {
+        StringBuilder sb = new StringBuilder();
+        for (String p : parts) {
+            if (isBlank(p)) continue;
+            if (sb.length() > 0) sb.append(sep);
+            sb.append(p);
+        }
+        return sb.toString();
     }
 }

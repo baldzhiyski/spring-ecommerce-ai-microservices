@@ -1,57 +1,83 @@
 package org.baldzhiyski.product.exception;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.baldzhiyski.product.model.JSONResponse;
+import lombok.Builder;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.baldzhiyski.product.model.res.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.HashMap;
+import jakarta.servlet.http.HttpServletRequest;
+import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-@ControllerAdvice
+@RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        HashMap<String, String> errors = new HashMap<>();
-
-        e.getBindingResult().getFieldErrors().forEach((fieldError) -> {
-            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
-        });
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(errors));
+    /* ---------- Common error envelope ---------- */
+    @Value
+    @Builder
+    static class ApiError {
+        String timestamp;       // ISO-8601
+        int status;             // 404
+        String error;           // "Not Found"
+        String message;         // "Product 90 not found"
+        String path;            // "/api/v1/products/inventory/reserve"
+        Map<String, Object> details; // optional (validation field errors, etc.)
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    ResponseEntity<?> badRequest(Exception ex) {
-        return ResponseEntity.badRequest().body(err(ex.getMessage()));
+    private static ResponseEntity<ApiError> build(HttpServletRequest req, HttpStatus status, String message, Map<String, Object> details) {
+        return ResponseEntity.status(status).body(
+                ApiError.builder()
+                        .timestamp(OffsetDateTime.now().toString())
+                        .status(status.value())
+                        .error(status.getReasonPhrase())
+                        .message(message)
+                        .path(req != null ? req.getRequestURI() : null)
+                        .details(details == null || details.isEmpty() ? null : details)
+                        .build()
+        );
+    }
+
+    /* ---------- Specific handlers ---------- */
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException e, HttpServletRequest req) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        for (FieldError fe : e.getBindingResult().getFieldErrors()) {
+            fieldErrors.put(fe.getField(), fe.getDefaultMessage());
+        }
+        details.put("fieldErrors", fieldErrors);
+        return build(req, HttpStatus.BAD_REQUEST, "Validation failed", details);
     }
 
     @ExceptionHandler(ProductPurchaseException.class)
-    public JSONResponse handleProductPurchaseException(ProductPurchaseException ex) {
-        return  JSONResponse
-                .builder()
-                .message(ex.getMessage())
-                .status(HttpStatus.BAD_REQUEST.toString())
-                .build();
+    public ResponseEntity<ApiError> handleProductPurchase(ProductPurchaseException e, HttpServletRequest req) {
+        return build(req, HttpStatus.BAD_REQUEST, e.getMessage(), null);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException e, HttpServletRequest req) {
+        return build(req, HttpStatus.BAD_REQUEST, e.getMessage(), null);
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public JSONResponse handleEntityNotFoundException(EntityNotFoundException ex) {
-        return  JSONResponse
-                .builder()
-                .message(ex.getMessage())
-                .status(HttpStatus.NOT_FOUND.toString())
-                .build();
+    public ResponseEntity<ApiError> handleEntityNotFound(EntityNotFoundException e, HttpServletRequest req) {
+        return build(req, HttpStatus.NOT_FOUND, e.getMessage(), null);
     }
-    private Map<String,Object> err(String msg){
-        return Map.of("timestamp", java.time.OffsetDateTime.now().toString(),
-                "error", msg);
+
+    /* ---------- Fallback (unexpected) ---------- */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleUnexpected(Exception e, HttpServletRequest req) {
+        log.error("Unhandled error at {}: {}", req.getRequestURI(), e.getMessage(), e);
+        return build(req, HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", null);
     }
 }
