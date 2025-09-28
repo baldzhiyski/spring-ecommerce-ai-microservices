@@ -21,6 +21,7 @@ class StripeCheckoutController {
     public Map<String,Object> createSession(@RequestBody @Valid PaymentReq req) throws Exception {
         com.stripe.Stripe.apiKey = stripe.secretKey();
 
+        String customerFullName = String.join(" ", req.customer().firstName(), req.customer().lastName());
         var params = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.PAYMENT)
                 .setSuccessUrl(stripe.successUrl() + "?orderRef=" + req.orderReference())
@@ -41,7 +42,7 @@ class StripeCheckoutController {
                 // metadata on the Session (optional)
                 .putMetadata("orderRef", req.orderReference())
                 .putMetadata("customerId", req.customer().id())
-                .putMetadata("customerFullName", String.join(" ", req.customer().firstName(), req.customer().lastName()))
+                .putMetadata("customerFullName", customerFullName)
                 .putMetadata("customerEmail", req.customer().email())
                 // ✅ metadata on the PaymentIntent created by Checkout
                 .setPaymentIntentData(
@@ -49,7 +50,7 @@ class StripeCheckoutController {
                                 .putMetadata("orderRef", req.orderReference())
                                 .putMetadata("customerId", req.customer().id())
                                 .putMetadata("paymentMethod",req.paymentMethod().toString())
-                                .putMetadata("customerFullName", String.join(" ", req.customer().firstName(), req.customer().lastName()))
+                                .putMetadata("customerFullName", customerFullName)
                                 .putMetadata("customerEmail", req.customer().email())
                                 .build()
                 )

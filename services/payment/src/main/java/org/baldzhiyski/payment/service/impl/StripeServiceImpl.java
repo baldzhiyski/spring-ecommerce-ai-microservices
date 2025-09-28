@@ -23,14 +23,25 @@ public class StripeServiceImpl implements StripeService {
     @Transactional
     @Override
     public void handleSuccess(String paymentRef, String orderRef, long amountMinor,
-                              String currency, String fullName, String email, String receiptUrl, String paymentMethod) {
-        var amount = BigDecimal.valueOf(amountMinor).movePointLeft(2);
-        repo.upsert(paymentRef, orderRef, amount, PaymentStatus.SUCCEEDED.name());
+                              String currency, String fullName, String email,
+                              String receiptUrl, String paymentMethod) {
 
-        String cur = (currency == null || currency.isBlank()) ? stripeProps.currency() : currency;
+        // 1) Persist SUCCEEDED + latest fields (idempotent on orderRef)
+        var amount = BigDecimal.valueOf(amountMinor).movePointLeft(2);
+        repo.upsertByOrder(paymentRef, orderRef, amount, PaymentStatus.SUCCEEDED.name());
+
+        // 2) Flip the "sent" flag ONCE (only the first call returns 1)
+        int flipped = repo.markSuccessEmailSentOnce(orderRef);
+        if (flipped == 0) {
+            // Email for this order was already sent → do nothing
+            return;
+        }
+
+        // 3) Publish after commit (guarantees the row is durable before emailing)
+        final String cur = (currency == null || currency.isBlank()) ? stripeProps.currency() : currency;
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override public void afterCommit() {
-                publisher.paymentSucceeded(orderRef, paymentRef, amountMinor, cur, fullName, email,receiptUrl,paymentMethod);
+                publisher.paymentSucceeded(orderRef, paymentRef, amountMinor, cur, fullName, email, receiptUrl, paymentMethod);
             }
         });
     }

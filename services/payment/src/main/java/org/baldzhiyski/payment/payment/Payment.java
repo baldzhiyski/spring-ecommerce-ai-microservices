@@ -24,8 +24,11 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    /** Stripe PaymentIntent id (or Session payment_intent) */
-    @Column(nullable = false, unique = true)
+    /**
+     * Stripe PaymentIntent id (or Session payment_intent).
+     * Not always unique in your setup → don’t mark unique.
+     */
+    @Column(nullable = false)
     private String paymentRef;
 
     @Enumerated(EnumType.STRING)
@@ -33,7 +36,18 @@ public class Payment {
 
     private BigDecimal amount;
 
+    /**
+     * Your internal order reference.
+     * Use this to enforce "one success email per order".
+     */
+    @Column(nullable = false,unique = true)
     private String orderRef;
+
+    /**
+     * Flag to ensure success email is sent once per order.
+     */
+    @Column(nullable = false)
+    private boolean successEmailSent = false;
 
     @CreatedDate
     @Column(updatable = false, nullable = false)
@@ -42,5 +56,4 @@ public class Payment {
     @LastModifiedDate
     @Column(insertable = false)
     private LocalDateTime updatedAt;
-
 }
