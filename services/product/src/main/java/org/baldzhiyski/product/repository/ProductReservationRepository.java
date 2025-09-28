@@ -14,21 +14,55 @@ import java.util.List;
 
 public interface ProductReservationRepository extends JpaRepository<ProductReservation, Long> {
 
-    @Query("select coalesce(sum(r.quantity),0) from ProductReservation r " +
-            "where r.productId=:pid and r.status='PENDING' and r.expiresAt> :now")
+    @Query("""
+        select coalesce(sum(r.quantity),0)
+        from ProductReservation r
+        where r.productId = :pid
+          and r.status = 'PENDING'
+          and r.expiresAt > :now
+    """)
     int sumPending(@Param("pid") Integer productId, @Param("now") OffsetDateTime now);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select r from ProductReservation r where r.orderRef=:ref and r.status='PENDING'")
+    @Query("""
+        select r
+        from ProductReservation r
+        where r.orderRef = :ref
+          and r.status = 'PENDING'
+    """)
     List<ProductReservation> findPendingForUpdate(@Param("ref") String orderRef);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update ProductReservation r set r.status='CONFIRMED', r.updatedAt=:now " +
-            "where r.orderRef=:ref and r.status='PENDING'")
-    int markConfirmed(@Param("ref") String orderRef, @Param("now") OffsetDateTime now);
+    @Query("""
+        update ProductReservation r
+           set r.status = 'CONFIRMED', r.updatedAt = :now
+         where r.orderRef = :ref
+           and r.status   = 'PENDING'
+    """)
+    void markConfirmed(@Param("ref") String orderRef, @Param("now") OffsetDateTime now);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update ProductReservation r set r.status='CANCELED', r.updatedAt=:now " +
-            "where r.orderRef=:ref and r.status='PENDING'")
-    int markCanceled(@Param("ref") String orderRef, @Param("now") OffsetDateTime now);
+    @Query("""
+        update ProductReservation r
+           set r.status = 'CANCELED', r.updatedAt = :now
+         where r.orderRef = :ref
+           and r.status   = 'PENDING'
+    """)
+    void markCanceled(@Param("ref") String orderRef, @Param("now") OffsetDateTime now);
+
+    @Query("""
+        select count(r)
+          from ProductReservation r
+         where r.status    = 'CONFIRMED'
+           and r.updatedAt < :cutoff
+    """)
+    long countConfirmedOlderThan(@Param("cutoff") OffsetDateTime cutoff);
+
+    @Modifying
+    @Query("""
+        delete from ProductReservation r
+         where r.status    = 'CONFIRMED'
+           and r.updatedAt < :cutoff
+    """)
+    int deleteConfirmedOlderThan(@Param("cutoff") OffsetDateTime cutoff);
 }
