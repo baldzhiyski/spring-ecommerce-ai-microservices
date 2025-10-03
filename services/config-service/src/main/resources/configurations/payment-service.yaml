@@ -41,4 +41,7 @@ stripe:
   cancel-url:  ${STRIPE_CANCEL_URL:http://localhost:8030/payment/cancel}
   currency:    ${STRIPE_CURRENCY:EUR}
 
-
+application:
+  config:
+    order-url: http://${GATEWAY_HOST:localhost}:8070/api/v1/orders
+    product-url: http://${GATEWAY_HOST:localhost}:8050/api/v1/products

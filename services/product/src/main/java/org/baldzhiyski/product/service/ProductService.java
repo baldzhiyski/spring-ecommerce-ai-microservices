@@ -12,4 +12,6 @@ public interface ProductService {
     ProductRes getProduct(Integer productId);
 
     List<ProductRes> findAllProducts();
+
+    List<ProductRes> findAllProductsByIds(List<Integer> ids);
 }

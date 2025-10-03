@@ -47,4 +47,12 @@ public class ProductServiceImpl  implements ProductService {
                 .map(this.productMapper::toDto)
                 .toList();
     }
+
+    @Override
+    public List<ProductRes> findAllProductsByIds(List<Integer> ids) {
+        return this.productRepository.findAllById(ids)
+                .stream()
+                .map(this.productMapper::toDto)
+                .toList();
+    }
 }

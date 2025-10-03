@@ -19,6 +19,7 @@ import org.baldzhiyski.order.model.req.PaymentCheckoutReq;
 import org.baldzhiyski.order.model.req.PurchaseRequest;
 import org.baldzhiyski.order.model.res.OrderRes;
 import org.baldzhiyski.order.model.res.PaymentCheckoutRes;
+import org.baldzhiyski.order.model.res.ProductInfo;
 import org.baldzhiyski.order.payment.PaymentClient;
 import org.baldzhiyski.order.product.ProductClient;
 import org.baldzhiyski.order.product.ProductRes;
@@ -30,6 +31,7 @@ import org.baldzhiyski.order.service.OrderService;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -51,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderEventPublisher orderEventPublisher;
     private final OrderLineRepository orderLineRepository;
     private final PaymentClient paymentClient;
+    private final  OrderPersister orderPersister;
 
     public OrderServiceImpl(CustomerClient customerClient,
                             ProductClient productClient,
@@ -59,7 +62,7 @@ public class OrderServiceImpl implements OrderService {
                             OrderLineMapper orderLineMapper,
                             OrderEventPublisher orderEventPublisher,
                             OrderLineRepository orderLineRepository,
-                            PaymentClient paymentClient) {
+                            PaymentClient paymentClient, OrderPersister orderPersister) {
         this.customerClient = customerClient;
         this.productClient = productClient;
         this.orderRepository = orderRepository;
@@ -68,84 +71,91 @@ public class OrderServiceImpl implements OrderService {
         this.orderEventPublisher = orderEventPublisher;
         this.orderLineRepository = orderLineRepository;
         this.paymentClient = paymentClient;
+        this.orderPersister = orderPersister;
     }
 
-    @Transactional
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public PaymentCheckoutRes createOrder(OrderReq orderReq) {
+
         // 1) validate customer (external)
         CustomerRes customer = customerClient.getCustomerById(orderReq.customerId());
 
         // 2) generate orderRef
         String orderRef = (orderReq.reference() != null) ? orderReq.reference() : UUID.randomUUID().toString();
 
-        // 3) RESERVE (external; no stock decrement yet)
-        ReserveResponse reserve = productClient.reserve(new ReserveCommand(orderRef, customer.id(), orderReq.products()));
-        var pricedById = reserve.priced().stream().collect(Collectors.toMap(ProductRes::id, p -> p));
+        // 3) Reserve (external; no stock decrement yet)
+        ReserveResponse reserve = productClient.reserve(
+                new ReserveCommand(orderRef, customer.id(), orderReq.products()));
+
+        Map<Integer, ProductRes> pricedById = reserve.priced().stream()
+                .collect(Collectors.toMap(ProductRes::id, p -> p));
 
         // 4) compute total using priced response
         Map<Integer, Integer> qtyByProduct = orderReq.products().stream()
-                .collect(Collectors.groupingBy(PurchaseRequest::productId, Collectors.summingInt(pr -> (int) pr.quantity())));
+                .collect(Collectors.groupingBy(PurchaseRequest::productId,
+                        Collectors.summingInt(pr -> (int) pr.quantity())));
 
         BigDecimal total = reserve.priced().stream()
-                .map(p -> p.finalUnitPrice().multiply(BigDecimal.valueOf(qtyByProduct.getOrDefault(p.id(), 0))))
+                .map(p -> p.finalUnitPrice()
+                        .multiply(BigDecimal.valueOf(qtyByProduct.getOrDefault(p.id(), 0))))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 5) persist order + lines
+        // 5) build order + lines
         Order order = orderMapper.toEntity(orderReq);
         order.setReference(orderRef);
         order.setCustomerId(orderReq.customerId());
         order.setPaymentMethod(orderReq.paymentMethod());
         order.setTotalAmount(total);
-        // Optional: order.setStatus(OrderStatus.PENDING_PAYMENT);
-
-        Order saved = orderRepository.save(order);
+        order.setStatus(OrderStatus.PENDING_PAYMENT);
 
         List<OrderLine> lines = orderReq.products().stream()
                 .map(reqLine -> {
-                    OrderLine line = orderLineMapper.toEntity(reqLine);
-                    line.setOrder(saved);
-                    if (!pricedById.containsKey(line.getProductId())) {
-                        throw new BusinessException("No pricing for productId=" + line.getProductId());
+                    if (!pricedById.containsKey(reqLine.productId())) {
+                        throw new BusinessException("No pricing for productId=" + reqLine.productId());
                     }
-                    return line;
+                    return orderLineMapper.toEntity(reqLine); // order set inside persister
                 })
                 .toList();
-        orderLineRepository.saveAll(lines);
 
-        // 6) Create Stripe Checkout Session via payment-service (amount in MINOR units)
+        // 6) COMMIT NOW — inner tx commits order + lines
+        Order saved = orderPersister.persistCommitted(order, lines);
+
+        // 8) Create checkout session (any failure here must NOT undo the committed order)
         long amountMinor = total.movePointRight(2).setScale(0, RoundingMode.HALF_UP).longValueExact();
-
-        var payReq = new PaymentCheckoutReq(
+        PaymentCheckoutReq payReq = new PaymentCheckoutReq(
                 orderRef,
                 PaymentMethod.CREDIT_CARD,
                 saved.getId(),
-                new Customer(
-                        customer.id(), customer.email(), customer.firstName(), customer.lastName()
-                ),
-                BigDecimal.valueOf(amountMinor) // payment-service expects .longValue() -> minor units
+                new Customer(customer.id(), customer.email(), customer.firstName(), customer.lastName()),
+                BigDecimal.valueOf(amountMinor)
         );
 
         try {
             PaymentCheckoutRes checkout = paymentClient.createCheckoutSession(payReq);
-
-            // Persist ONLY the sessionId (not the URL)
-            saved.setSessionId(checkout.sessionId());
-            orderRepository.save(saved);
-
-            log.info("Created Checkout Session for orderRef={} sessionId={} url={}",
-                    orderRef, checkout.sessionId(), checkout.url());
-
-            // Do NOT confirm/cancel inventory here; finalize via payment events listener
+            updateSessionId(saved.getId(), checkout.sessionId()); // small tx
             return checkout;
 
         } catch (Exception e) {
-            // If we fail to create a checkout session, release the reservation and abort
             try { productClient.cancel(orderRef); } catch (Exception ignored) {}
+            updateStatus(saved.getReference(), OrderStatus.PAYMENT_FAILED); // small tx
             throw new BusinessException("Unable to create payment session for orderRef=" + orderRef);
         }
     }
 
+    // Small transactional helpers
 
+    @Transactional
+    void updateSessionId(Integer orderId, String sessionId) {
+        orderRepository.findById(orderId)
+                .ifPresent(o -> { o.setSessionId(sessionId); orderRepository.save(o); });
+        // or use a JPQL update for fewer queries
+    }
+
+    @Transactional
+    void updateStatus(String reference, OrderStatus status) {
+        orderRepository.updateStatusByReference(reference, status);
+    }
     // -----------------------------------------------------------------------
     // Payment events listener (same queue your notification-service consumes)
     // -----------------------------------------------------------------------
@@ -219,5 +229,21 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Order %d not found".formatted(id)));
         return orderMapper.toRes(order);
+    }
+
+    @Override
+    public List<ProductInfo> findAllProductsIdsForCurrentOrder(Integer id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Order %d not found".formatted(id)));
+
+        return order.getOrderLines()
+                .stream().map(
+                        orderLine -> {
+                            return ProductInfo.builder()
+                                    .productId(orderLine.getProductId())
+                                    .quantity(orderLine.getQuantity())
+                                    .build();
+                        }
+                ).toList();
     }
 }

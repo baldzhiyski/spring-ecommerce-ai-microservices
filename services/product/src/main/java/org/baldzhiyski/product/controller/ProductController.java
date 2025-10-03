@@ -38,4 +38,10 @@ public class ProductController {
         return  ResponseEntity.ok(productService.findAllProducts());
     }
 
+    @GetMapping("/all-by-id")
+    public ResponseEntity<List<ProductRes>> getAllByIds(@RequestParam("ids") List<Integer> ids) {
+        return ResponseEntity.ok(productService.findAllProductsByIds(ids));
+    }
+
+
 }

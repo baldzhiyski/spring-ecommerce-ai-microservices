@@ -23,9 +23,9 @@ server:
 
 application:
   config:
-    customer-url: http://${GATEWAY_HOST:localhost}:8222/api/v1/customers
-    product-url: http://${GATEWAY_HOST:localhost}:8222/api/v1/products
-    payment-url: http://${GATEWAY_HOST:localhost}:8222/api/v1/payments
+    customer-url: http://${GATEWAY_HOST:localhost}:8090/api/v1/customers
+    product-url: http://${GATEWAY_HOST:localhost}:8050/api/v1/products
+    payment-url: http://${GATEWAY_HOST:localhost}:8030/api/v1/payments
 
 
 app:

@@ -35,6 +35,7 @@ dependencies {
     implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.2'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     compileOnly 'org.projectlombok:lombok:1.18.34'

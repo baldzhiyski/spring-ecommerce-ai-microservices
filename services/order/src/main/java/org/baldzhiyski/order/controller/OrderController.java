@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.baldzhiyski.order.model.req.OrderReq;
 import org.baldzhiyski.order.model.res.OrderRes;
 import org.baldzhiyski.order.model.res.PaymentCheckoutRes;
+import org.baldzhiyski.order.model.res.ProductInfo;
 import org.baldzhiyski.order.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,5 +38,10 @@ public class OrderController {
     @GetMapping("/{id}")
     public ResponseEntity<OrderRes> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(orderService.findById(id));
+    }
+
+    @GetMapping("/product-info/{orderId}")
+    public ResponseEntity<List<ProductInfo>> findAllProductsIdsByOrderId(@PathVariable Integer orderId) {
+        return ResponseEntity.ok(orderService.findAllProductsIdsForCurrentOrder(orderId));
     }
 }
