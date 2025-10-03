@@ -37,7 +37,10 @@ dependencies {
 
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
 
-    implementation("org.mapstruct:mapstruct:1.5.5.Final")         // or 1.6.0.Final if you prefer
+    implementation("org.mapstruct:mapstruct:1.5.5.Final")
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'// or 1.6.0.Final if you prefer
     annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
 
     compileOnly("org.projectlombok:lombok")
