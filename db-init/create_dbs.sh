@@ -14,5 +14,6 @@ create_db_if_missing products
 create_db_if_missing customers
 create_db_if_missing orders
 create_db_if_missing payments
+create_db_if_missing vectordb
 
 echo "DB creation script finished."

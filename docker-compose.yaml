@@ -1,5 +1,37 @@
 services:
 
+  mcp-service:
+    build:
+      context: ./services/mcp-server-e-commerce
+      dockerfile: Dockerfile
+    container_name: ms_mcp_service
+    ports:
+      - "${MCP_SERVICE}:8999"
+    networks:
+      - microservices-net
+    env_file:
+      - .env
+    environment:
+      GRADLE_USER_HOME: /gradle-home
+      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+    restart: unless-stopped
+    volumes:
+      - ./services/mcp-server-e-commerce:/app
+      - gradle-cache-mcp:/gradle-home
+    command: >
+      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8999 || exit 1" ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 40s
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      config-service:
+        condition: service_healthy
+
 
   gateway-service:
     build:
@@ -398,7 +430,7 @@ services:
   # === PostgreSQL ===
   postgresql:
     container_name: ms_pg_sql
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16   # PostgreSQL 16 with pgvector preinstalled
     env_file:
       - .env
     environment:
@@ -407,14 +439,14 @@ services:
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres
-      - ./db-init:/docker-entrypoint-initdb.d
+      - ./db-init:/docker-entrypoint-initdb.d   # optional init scripts
     ports:
       - "${POSTGRES_PORT}:5432"
     networks:
       - microservices-net
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres" ]
       interval: 10s
       timeout: 5s
       retries: 10
