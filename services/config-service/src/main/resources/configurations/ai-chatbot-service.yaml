@@ -31,7 +31,7 @@ spring:
         sse:
           connections:
             ecommerce-tools:
-              url: https://${MCP_HOST:localhost}:8999
+              url: http://${MCP_HOST:localhost}:8999/sse
 
   application:
     vector:

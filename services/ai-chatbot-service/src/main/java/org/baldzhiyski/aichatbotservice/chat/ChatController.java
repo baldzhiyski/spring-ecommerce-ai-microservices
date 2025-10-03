@@ -1,5 +1,6 @@
 package org.baldzhiyski.aichatbotservice.chat;
 
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -11,7 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-@RequiredArgsConstructor
+
 @RestController
 @RequestMapping("/api/v1/chat")
 public class ChatController {
@@ -19,6 +20,12 @@ public class ChatController {
     private final ChatClient chatClient;
     private final VectorStore vectorStore;
     private final ChatMemory chatMemory;
+
+    public ChatController(ChatClient chatClient, VectorStore vectorStore, ChatMemory chatMemory) {
+        this.chatClient = chatClient;
+        this.vectorStore = vectorStore;
+        this.chatMemory = chatMemory;
+    }
 
     @PostMapping
     public ResponseEntity<String> sendMessage(@RequestBody String message,

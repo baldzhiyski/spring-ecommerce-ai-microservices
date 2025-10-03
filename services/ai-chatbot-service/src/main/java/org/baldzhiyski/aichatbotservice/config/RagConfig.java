@@ -1,6 +1,6 @@
 package org.baldzhiyski.aichatbotservice.config;
-
-import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.transformer.splitter.TextSplitter;
@@ -18,9 +18,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 import java.util.Locale;
 
-@Slf4j
 @Configuration
 public class RagConfig {
+
+    private static final Logger log = LogManager.getLogger(RagConfig.class);
 
     @Value("${spring.application.vector.schema:public}")
     private String schema;
