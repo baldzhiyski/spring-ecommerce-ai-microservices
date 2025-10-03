@@ -1,431 +1,431 @@
 services:
 
-  mcp-service:
-    build:
-      context: ./services/mcp-server-e-commerce
-      dockerfile: Dockerfile
-    container_name: ms_mcp_service
-    ports:
-      - "${MCP_SERVICE}:8999"
-    networks:
-      - microservices-net
-    env_file:
-      - .env
-    environment:
-      GRADLE_USER_HOME: /gradle-home
-      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
-    restart: unless-stopped
-    volumes:
-      - ./services/mcp-server-e-commerce:/app
-      - gradle-cache-mcp:/gradle-home
-    command: >
-      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8999 || exit 1" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 40s
-    depends_on:
-      discovery-service:
-        condition: service_healthy
-      config-service:
-        condition: service_healthy
-
-
-  gateway-service:
-    build:
-      context: ./services/gateway
-      dockerfile: Dockerfile
-    container_name: ms_gateway_service
-    ports:
-      - "${GATEWAY_SERVICE}:8222"
-    networks:
-      - microservices-net
-    env_file:
-      - .env
-    environment:
-      GRADLE_USER_HOME: /gradle-home
-      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
-    restart: unless-stopped
-    volumes:
-      - ./services/gateway:/app
-      - gradle-cache-gateway:/gradle-home
-    command: >
-      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8222 || exit 1" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 40s
-    depends_on:
-      discovery-service:
-        condition: service_healthy
-      config-service:
-        condition: service_healthy
-    develop:
-      watch:
-        - path: ./services/gateway/src
-          target: /app/src
-          action: sync
-          ignore:
-            - "**/build/**"
-            - "**/.idea/**"
-            - "**/.git/**"
-        - path: ./services/gateway/build.gradle
-          target: /app/build.gradle
-          action: sync
-        - path: ./services/gateway/settings.gradle
-          target: /app/settings.gradle
-          action: sync
-        - path: ./services/gateway/gradlew
-          action: rebuild
-        - path: ./services/gateway/gradle
-          action: rebuild
-
-  payment-service:
-    build:
-      context: ./services/payment
-      dockerfile: Dockerfile
-    container_name: ms_payment_service
-    ports:
-      - "${PAYMENT_SERVICE}:8030"
-    networks:
-      - microservices-net
-    env_file:
-      - .env
-    environment:
-      GRADLE_USER_HOME: /gradle-home
-      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
-    restart: unless-stopped
-    volumes:
-      - ./services/payment:/app
-      - gradle-cache-payments:/gradle-home
-    command: >
-      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8030 || exit 1" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 40s
-    depends_on:
-      discovery-service:
-        condition: service_healthy
-      config-service:
-        condition: service_healthy
-    develop:
-      watch:
-        - path: ./services/payment/src
-          target: /app/src
-          action: sync
-          ignore:
-            - "**/build/**"
-            - "**/.idea/**"
-            - "**/.git/**"
-        - path: ./services/payment/build.gradle
-          target: /app/build.gradle
-          action: sync
-        - path: ./services/payment/settings.gradle
-          target: /app/settings.gradle
-          action: sync
-        - path: ./services/payment/gradlew
-          action: rebuild
-        - path: ./services/payment/gradle
-          action: rebuild
-
-  notification-service:
-    build:
-      context: ./services/notification
-      dockerfile: Dockerfile
-    container_name: ms_notification_service
-    ports:
-      - "${NOTIFICATION_SERVICE}:8777"
-    networks:
-      - microservices-net
-    env_file:
-      - .env
-    environment:
-      GRADLE_USER_HOME: /gradle-home
-      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
-    restart: unless-stopped
-    volumes:
-      - ./services/notification:/app
-      - gradle-cache-notifications:/gradle-home
-    command: >
-      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:87777 || exit 1" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 40s
-    depends_on:
-      discovery-service:
-        condition: service_healthy
-      config-service:
-        condition: service_healthy
-    develop:
-      watch:
-        - path: ./services/notification/src
-          target: /app/src
-          action: sync
-          ignore:
-            - "**/build/**"
-            - "**/.idea/**"
-            - "**/.git/**"
-        - path: ./services/notification/build.gradle
-          target: /app/build.gradle
-          action: sync
-        - path: ./services/notification/settings.gradle
-          target: /app/settings.gradle
-          action: sync
-        - path: ./services/notification/gradlew
-          action: rebuild
-        - path: ./services/notification/gradle
-          action: rebuild
-
-
-  order-service:
-    build:
-      context: ./services/order
-      dockerfile: Dockerfile
-    container_name: ms_order_service
-    ports:
-      - "${ORDER_SERVICE}:8070"
-    networks:
-      - microservices-net
-    env_file:
-      - .env
-    environment:
-      GRADLE_USER_HOME: /gradle-home
-      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
-    restart: unless-stopped
-    volumes:
-      - ./services/order:/app
-      - gradle-cache-orders:/gradle-home
-    command: >
-      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8070 || exit 1" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 40s
-    depends_on:
-      discovery-service:
-        condition: service_healthy
-      config-service:
-        condition: service_healthy
-      postgresql:
-        condition: service_started
-    develop:
-      watch:
-        - path: ./services/order/src
-          target: /app/src
-          action: sync
-          ignore:
-            - "**/build/**"
-            - "**/.idea/**"
-            - "**/.git/**"
-        - path: ./services/order/build.gradle
-          target: /app/build.gradle
-          action: sync
-        - path: ./services/order/settings.gradle
-          target: /app/settings.gradle
-          action: sync
-        - path: ./services/order/gradlew
-          action: rebuild
-        - path: ./services/order/gradle
-          action: rebuild
-
-
-
-
-  # === Product Service (Spring Boot, hot reload) ===
-  product-service:
-    build:
-      context: ./services/product
-      dockerfile: Dockerfile
-    container_name: ms_product_service
-    ports:
-      - "${PRODUCT_SERVICE}:8050"
-    networks:
-      - microservices-net
-    env_file:
-      - .env
-    environment:
-      GRADLE_USER_HOME: /gradle-home
-      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
-    restart: unless-stopped
-    volumes:
-      - ./services/product:/app
-      - gradle-cache-product:/gradle-home
-    command: >
-      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8050 || exit 1" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 40s
-    depends_on:
-      discovery-service:
-        condition: service_healthy
-      config-service:
-        condition: service_healthy
-      postgresql:
-        condition: service_started
-    develop:
-      watch:
-        - path: ./services/product/src
-          target: /app/src
-          action: sync
-          ignore:
-            - "**/build/**"
-            - "**/.idea/**"
-            - "**/.git/**"
-        - path: ./services/product/build.gradle
-          target: /app/build.gradle
-          action: sync
-        - path: ./services/product/settings.gradle
-          target: /app/settings.gradle
-          action: sync
-        - path: ./services/product/gradlew
-          action: rebuild
-        - path: ./services/product/gradle
-          action: rebuild
-
-  # === Customer Service (Spring Boot, hot reload) ===
-  customer-service:
-    build:
-      context: ./services/customer
-      dockerfile: Dockerfile
-    container_name: ms_customer_service
-    ports:
-      - "${CUSTOMER_SERVICE}:8090"
-    networks:
-      - microservices-net
-    env_file:
-      - .env
-    environment:
-      GRADLE_USER_HOME: /gradle-home
-      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
-    restart: unless-stopped
-    volumes:
-      - ./services/customer:/app
-      - gradle-cache-customer:/gradle-home
-    command: >
-      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8090 || exit 1" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 40s
-    depends_on:
-      discovery-service:
-        condition: service_healthy
-      config-service:
-        condition: service_healthy
-      mongodb:
-        condition: service_started
-    develop:
-      watch:
-        - path: ./services/customer/src
-          target: /app/src
-          action: sync
-          ignore:
-            - "**/build/**"
-            - "**/.idea/**"
-            - "**/.git/**"
-        - path: ./services/customer/build.gradle
-          target: /app/build.gradle
-          action: sync
-        - path: ./services/customer/settings.gradle
-          target: /app/settings.gradle
-          action: sync
-        - path: ./services/customer/gradlew
-          action: rebuild
-        - path: ./services/customer/gradle
-          action: rebuild
-
-  # === Spring Cloud Config Server (Spring Boot, hot reload) ===
-  config-service:
-    build:
-      context: ./services/config-service
-      dockerfile: Dockerfile
-    container_name: ms_config_service
-    ports:
-      - "${CONFIG_SERVICE_PORT}:9999"
-    networks:
-      - microservices-net
-    env_file:
-      - .env
-    environment:
-      GRADLE_USER_HOME: /gradle-home
-      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
-    restart: unless-stopped
-    volumes:
-      - ./services/config-service:/app
-      - gradle-cache-config:/gradle-home
-    command: >
-      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:9999 || exit 1" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 40s
-
-  # === Eureka Discovery Server (Spring Boot, hot reload) ===
-  discovery-service:
-    build:
-      context: ./services/discovery-service
-      dockerfile: Dockerfile
-    container_name: ms_discovery_service
-    ports:
-      - "${DISCOVERY_SERVICE_PORT}:8761"
-    networks:
-      - microservices-net
-    environment:
-      GRADLE_USER_HOME: /gradle-home
-      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
-    restart: unless-stopped
-    volumes:
-      - ./services/discovery-service:/app
-      - gradle-cache-discovery:/gradle-home
-    command: >
-      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
-    depends_on:
-      config-service:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -fsS http://localhost:8761/ || exit 1" ]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 40s
-    develop:
-      watch:
-        - path: ./services/discovery-service/src
-          target: /app/src
-          action: sync
-          ignore:
-            - "**/build/**"
-            - "**/.idea/**"
-            - "**/.git/**"
-        - path: ./services/discovery-service/build.gradle
-          target: /app/build.gradle
-          action: sync
-        - path: ./services/discovery-service/settings.gradle
-          target: /app/settings.gradle
-          action: sync
-        - path: ./services/discovery-service/gradlew
-          action: rebuild
-        - path: ./services/discovery-service/gradle
-          action: rebuild
+#  mcp-service:
+#    build:
+#      context: ./services/mcp-server-e-commerce
+#      dockerfile: Dockerfile
+#    container_name: ms_mcp_service
+#    ports:
+#      - "${MCP_SERVICE}:8999"
+#    networks:
+#      - microservices-net
+#    env_file:
+#      - .env
+#    environment:
+#      GRADLE_USER_HOME: /gradle-home
+#      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+#    restart: unless-stopped
+#    volumes:
+#      - ./services/mcp-server-e-commerce:/app
+#      - gradle-cache-mcp:/gradle-home
+#    command: >
+#      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8999 || exit 1" ]
+#      interval: 10s
+#      timeout: 3s
+#      retries: 10
+#      start_period: 40s
+#    depends_on:
+#      discovery-service:
+#        condition: service_healthy
+#      config-service:
+#        condition: service_healthy
+#
+#
+#  gateway-service:
+#    build:
+#      context: ./services/gateway
+#      dockerfile: Dockerfile
+#    container_name: ms_gateway_service
+#    ports:
+#      - "${GATEWAY_SERVICE}:8222"
+#    networks:
+#      - microservices-net
+#    env_file:
+#      - .env
+#    environment:
+#      GRADLE_USER_HOME: /gradle-home
+#      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+#    restart: unless-stopped
+#    volumes:
+#      - ./services/gateway:/app
+#      - gradle-cache-gateway:/gradle-home
+#    command: >
+#      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8222 || exit 1" ]
+#      interval: 10s
+#      timeout: 3s
+#      retries: 10
+#      start_period: 40s
+#    depends_on:
+#      discovery-service:
+#        condition: service_healthy
+#      config-service:
+#        condition: service_healthy
+#    develop:
+#      watch:
+#        - path: ./services/gateway/src
+#          target: /app/src
+#          action: sync
+#          ignore:
+#            - "**/build/**"
+#            - "**/.idea/**"
+#            - "**/.git/**"
+#        - path: ./services/gateway/build.gradle
+#          target: /app/build.gradle
+#          action: sync
+#        - path: ./services/gateway/settings.gradle
+#          target: /app/settings.gradle
+#          action: sync
+#        - path: ./services/gateway/gradlew
+#          action: rebuild
+#        - path: ./services/gateway/gradle
+#          action: rebuild
+#
+#  payment-service:
+#    build:
+#      context: ./services/payment
+#      dockerfile: Dockerfile
+#    container_name: ms_payment_service
+#    ports:
+#      - "${PAYMENT_SERVICE}:8030"
+#    networks:
+#      - microservices-net
+#    env_file:
+#      - .env
+#    environment:
+#      GRADLE_USER_HOME: /gradle-home
+#      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+#    restart: unless-stopped
+#    volumes:
+#      - ./services/payment:/app
+#      - gradle-cache-payments:/gradle-home
+#    command: >
+#      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8030 || exit 1" ]
+#      interval: 10s
+#      timeout: 3s
+#      retries: 10
+#      start_period: 40s
+#    depends_on:
+#      discovery-service:
+#        condition: service_healthy
+#      config-service:
+#        condition: service_healthy
+#    develop:
+#      watch:
+#        - path: ./services/payment/src
+#          target: /app/src
+#          action: sync
+#          ignore:
+#            - "**/build/**"
+#            - "**/.idea/**"
+#            - "**/.git/**"
+#        - path: ./services/payment/build.gradle
+#          target: /app/build.gradle
+#          action: sync
+#        - path: ./services/payment/settings.gradle
+#          target: /app/settings.gradle
+#          action: sync
+#        - path: ./services/payment/gradlew
+#          action: rebuild
+#        - path: ./services/payment/gradle
+#          action: rebuild
+#
+#  notification-service:
+#    build:
+#      context: ./services/notification
+#      dockerfile: Dockerfile
+#    container_name: ms_notification_service
+#    ports:
+#      - "${NOTIFICATION_SERVICE}:8777"
+#    networks:
+#      - microservices-net
+#    env_file:
+#      - .env
+#    environment:
+#      GRADLE_USER_HOME: /gradle-home
+#      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+#    restart: unless-stopped
+#    volumes:
+#      - ./services/notification:/app
+#      - gradle-cache-notifications:/gradle-home
+#    command: >
+#      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:87777 || exit 1" ]
+#      interval: 10s
+#      timeout: 3s
+#      retries: 10
+#      start_period: 40s
+#    depends_on:
+#      discovery-service:
+#        condition: service_healthy
+#      config-service:
+#        condition: service_healthy
+#    develop:
+#      watch:
+#        - path: ./services/notification/src
+#          target: /app/src
+#          action: sync
+#          ignore:
+#            - "**/build/**"
+#            - "**/.idea/**"
+#            - "**/.git/**"
+#        - path: ./services/notification/build.gradle
+#          target: /app/build.gradle
+#          action: sync
+#        - path: ./services/notification/settings.gradle
+#          target: /app/settings.gradle
+#          action: sync
+#        - path: ./services/notification/gradlew
+#          action: rebuild
+#        - path: ./services/notification/gradle
+#          action: rebuild
+#
+#
+#  order-service:
+#    build:
+#      context: ./services/order
+#      dockerfile: Dockerfile
+#    container_name: ms_order_service
+#    ports:
+#      - "${ORDER_SERVICE}:8070"
+#    networks:
+#      - microservices-net
+#    env_file:
+#      - .env
+#    environment:
+#      GRADLE_USER_HOME: /gradle-home
+#      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+#    restart: unless-stopped
+#    volumes:
+#      - ./services/order:/app
+#      - gradle-cache-orders:/gradle-home
+#    command: >
+#      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8070 || exit 1" ]
+#      interval: 10s
+#      timeout: 3s
+#      retries: 10
+#      start_period: 40s
+#    depends_on:
+#      discovery-service:
+#        condition: service_healthy
+#      config-service:
+#        condition: service_healthy
+#      postgresql:
+#        condition: service_started
+#    develop:
+#      watch:
+#        - path: ./services/order/src
+#          target: /app/src
+#          action: sync
+#          ignore:
+#            - "**/build/**"
+#            - "**/.idea/**"
+#            - "**/.git/**"
+#        - path: ./services/order/build.gradle
+#          target: /app/build.gradle
+#          action: sync
+#        - path: ./services/order/settings.gradle
+#          target: /app/settings.gradle
+#          action: sync
+#        - path: ./services/order/gradlew
+#          action: rebuild
+#        - path: ./services/order/gradle
+#          action: rebuild
+#
+#
+#
+#
+#  # === Product Service (Spring Boot, hot reload) ===
+#  product-service:
+#    build:
+#      context: ./services/product
+#      dockerfile: Dockerfile
+#    container_name: ms_product_service
+#    ports:
+#      - "${PRODUCT_SERVICE}:8050"
+#    networks:
+#      - microservices-net
+#    env_file:
+#      - .env
+#    environment:
+#      GRADLE_USER_HOME: /gradle-home
+#      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+#    restart: unless-stopped
+#    volumes:
+#      - ./services/product:/app
+#      - gradle-cache-product:/gradle-home
+#    command: >
+#      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8050 || exit 1" ]
+#      interval: 10s
+#      timeout: 3s
+#      retries: 10
+#      start_period: 40s
+#    depends_on:
+#      discovery-service:
+#        condition: service_healthy
+#      config-service:
+#        condition: service_healthy
+#      postgresql:
+#        condition: service_started
+#    develop:
+#      watch:
+#        - path: ./services/product/src
+#          target: /app/src
+#          action: sync
+#          ignore:
+#            - "**/build/**"
+#            - "**/.idea/**"
+#            - "**/.git/**"
+#        - path: ./services/product/build.gradle
+#          target: /app/build.gradle
+#          action: sync
+#        - path: ./services/product/settings.gradle
+#          target: /app/settings.gradle
+#          action: sync
+#        - path: ./services/product/gradlew
+#          action: rebuild
+#        - path: ./services/product/gradle
+#          action: rebuild
+#
+#  # === Customer Service (Spring Boot, hot reload) ===
+#  customer-service:
+#    build:
+#      context: ./services/customer
+#      dockerfile: Dockerfile
+#    container_name: ms_customer_service
+#    ports:
+#      - "${CUSTOMER_SERVICE}:8090"
+#    networks:
+#      - microservices-net
+#    env_file:
+#      - .env
+#    environment:
+#      GRADLE_USER_HOME: /gradle-home
+#      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+#    restart: unless-stopped
+#    volumes:
+#      - ./services/customer:/app
+#      - gradle-cache-customer:/gradle-home
+#    command: >
+#      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:8090 || exit 1" ]
+#      interval: 10s
+#      timeout: 3s
+#      retries: 10
+#      start_period: 40s
+#    depends_on:
+#      discovery-service:
+#        condition: service_healthy
+#      config-service:
+#        condition: service_healthy
+#      mongodb:
+#        condition: service_started
+#    develop:
+#      watch:
+#        - path: ./services/customer/src
+#          target: /app/src
+#          action: sync
+#          ignore:
+#            - "**/build/**"
+#            - "**/.idea/**"
+#            - "**/.git/**"
+#        - path: ./services/customer/build.gradle
+#          target: /app/build.gradle
+#          action: sync
+#        - path: ./services/customer/settings.gradle
+#          target: /app/settings.gradle
+#          action: sync
+#        - path: ./services/customer/gradlew
+#          action: rebuild
+#        - path: ./services/customer/gradle
+#          action: rebuild
+#
+#  # === Spring Cloud Config Server (Spring Boot, hot reload) ===
+#  config-service:
+#    build:
+#      context: ./services/config-service
+#      dockerfile: Dockerfile
+#    container_name: ms_config_service
+#    ports:
+#      - "${CONFIG_SERVICE_PORT}:9999"
+#    networks:
+#      - microservices-net
+#    env_file:
+#      - .env
+#    environment:
+#      GRADLE_USER_HOME: /gradle-home
+#      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+#    restart: unless-stopped
+#    volumes:
+#      - ./services/config-service:/app
+#      - gradle-cache-config:/gradle-home
+#    command: >
+#      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -sS -o /dev/null -m 3 http://localhost:9999 || exit 1" ]
+#      interval: 10s
+#      timeout: 3s
+#      retries: 10
+#      start_period: 40s
+#
+#  # === Eureka Discovery Server (Spring Boot, hot reload) ===
+#  discovery-service:
+#    build:
+#      context: ./services/discovery-service
+#      dockerfile: Dockerfile
+#    container_name: ms_discovery_service
+#    ports:
+#      - "${DISCOVERY_SERVICE_PORT}:8761"
+#    networks:
+#      - microservices-net
+#    environment:
+#      GRADLE_USER_HOME: /gradle-home
+#      GRADLE_OPTS: "-Dorg.gradle.vfs.watch=false"
+#    restart: unless-stopped
+#    volumes:
+#      - ./services/discovery-service:/app
+#      - gradle-cache-discovery:/gradle-home
+#    command: >
+#      ./gradlew --no-daemon bootRun -Pspring.profiles.active=dev
+#    depends_on:
+#      config-service:
+#        condition: service_healthy
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -fsS http://localhost:8761/ || exit 1" ]
+#      interval: 10s
+#      timeout: 3s
+#      retries: 10
+#      start_period: 40s
+#    develop:
+#      watch:
+#        - path: ./services/discovery-service/src
+#          target: /app/src
+#          action: sync
+#          ignore:
+#            - "**/build/**"
+#            - "**/.idea/**"
+#            - "**/.git/**"
+#        - path: ./services/discovery-service/build.gradle
+#          target: /app/build.gradle
+#          action: sync
+#        - path: ./services/discovery-service/settings.gradle
+#          target: /app/settings.gradle
+#          action: sync
+#        - path: ./services/discovery-service/gradlew
+#          action: rebuild
+#        - path: ./services/discovery-service/gradle
+#          action: rebuild
 
   # === PostgreSQL ===
   postgresql:
@@ -535,11 +535,12 @@ volumes:
   postgres:
   mongo:
   rabbitmq:
-  gradle-cache-product:
-  gradle-cache-customer:
-  gradle-cache-config:
-  gradle-cache-discovery:
-  gradle-cache-orders:
-  gradle-cache-notifications:
-  gradle-cache-payments:
-  gradle-cache-gateway:
+#  gradle-cache-product:
+#  gradle-cache-customer:
+#  gradle-cache-config:
+#  gradle-cache-discovery:
+#  gradle-cache-orders:
+#  gradle-cache-notifications:
+#  gradle-cache-payments:
+#  gradle-cache-gateway:
+#  gradle-cache-mcp:

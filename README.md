@@ -37,21 +37,14 @@ This project is a **Microservices-based E-Commerce Application** built with **Sp
 
 ---
 
-## AI Services
+## AI Service
 
-- **AI Email Worker (Headless)**
-  - Scheduled weekly recommendations & personalized discounts.
-  - Detects user inactivity / churn risk (e.g., no views or cart activity for N days) and generates targeted nudges.
-  - Proposes guarded incentives (small, budget-aware discounts with floors/MAP, category exclusions) when risk is high.
-  - Uses Spring AI to craft subject/body with clear CTAs; A/B tests subject lines; logs outcomes for learning.
-  - Publishes `EmailSendCommand` and `OfferGenerated` events to Notification Service via RabbitMQ.
-
-- **AI Assistant & Personalization API (WebFlux)**
+- **AI Assistant & Personalization API**
   - **Conversational Q&A (Streaming RAG):** Unified endpoint for product/policy Q&A and chat with per-user memory; streams tokens via SSE/WebSocket.
   - **Visual Search:** Image-to-product matching (embeddings + vector DB) with “why this match” rationales.
   - **Checkout Upsell Bundles (Real-time):** Suggests add-on bundles before payment; validates stock/margin/thresholds in-flight.
   - **Search Re-ranking & Query Rewrite:** Reorders candidates using user signals and expands/clarifies queries for relevance.
-  - Built on WebFlux for non-blocking fan-out to Product/Price/Inventory/Vector stores and low-latency streaming responses.
+  - Built on MVC .
 
 ---
 
@@ -63,29 +56,13 @@ This project is a **Microservices-based E-Commerce Application** built with **Sp
 - **Payments → Notifications**  
   `payment.succeeded`, `payment.failed` → Notification Service sends success/failure receipts and follow-up actions.
 
-- **AI Email Worker → Notifications**  
-  `email.send` → Notification Service dispatches personalized emails.  
-  The **AI Email Worker**:
-  - Curates **per-user product recommendations** and **guard-railed discounts**.
-  - **Detects user inactivity/churn risk** and triggers targeted nudges.
-  - Generates localized **subject/body** via Spring AI and logs outcomes for learning (A/B testing ready).
-  - Uses **RAG (Retrieval-Augmented Generation)** to combine:
-    - **Global knowledge** (products, FAQs, policies).  
-    - **User-scoped signals** (preferences, intents, recency).  
-
-This ensures every message is **context-aware** and tailored to the user’s journey.
-
-
 ---
 
 ##  Runtime Choices
 - **Normal Spring Web (Servlet/MVC):**
     - Orders, Customer, Payment, Product, Notifications, Config, Eureka, Gateway.
-- **Spring WebFlux (Reactive):**
-    - AI Assistant & Personalization API (real-time streaming, high concurrency).
-- **Headless (no web server):**
-    - AI Email Worker (scheduled + RabbitMQ consumer).
-
+- **Spring MVC :**
+    - AI Assistant & Personalization API .
 ---
 
 ## Security & Observability
@@ -120,7 +97,6 @@ This ensures every message is **context-aware** and tailored to the user’s jou
 - **Spring AI** – Generative AI integration (recommendations, smart search, AI-driven descriptions)
 - **RabbitMQ** – Message broker for asynchronous, event-driven architecture
 - **REST APIs** – Clean and well-structured endpoints for e-commerce workflows
-- **springdoc-openapi** – Auto-generated OpenAPI + Swagger UI for every service
 
 
 ---
