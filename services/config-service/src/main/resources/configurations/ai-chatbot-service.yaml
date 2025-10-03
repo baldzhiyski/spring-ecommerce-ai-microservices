@@ -1,0 +1,44 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9099/realms/micro-service
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/ai_db
+    username: ${POSTGRES_USER:baldzhiyski}
+    password: ${POSTGRES_PASSWORD:super_strong_pg_password}
+    driver-class-name: org.postgresql.Driver
+  ai:
+    chat:
+      client:
+        enabled: false
+    openai:
+      api-key: ${OPENAI_API_KEY}
+
+      embedding:
+        options:
+          model: text-embedding-ada-002
+
+      chat:
+        options:
+          model: gpt-4o
+
+    mcp:
+      client:
+        enabled: true
+        sse:
+          connections:
+            ecommerce-tools:
+              url: https://${MCP_HOST:localhost}:8999
+
+  application:
+    vector:
+      schema: public
+      table: ai_documents
+      distance: COSINE
+      ingestOnBoot: true       # only ingests if table empty
+
+server:
+  port: 2222

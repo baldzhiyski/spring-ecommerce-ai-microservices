@@ -38,3 +38,9 @@ spring:
               uri: lb://PAYMENT-SERVICE
               predicates:
                 - Path=/api/v1/payments/**
+            - id: ai-chatbot-service
+              uri: lb://AI-CHATBOT-SERVICE
+              predicates:
+                - Path=/api/v1/chat/**
+              filters:
+                - TokenRelay
