@@ -14,6 +14,8 @@ import java.util.Optional;
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     Optional<Payment> findByPaymentRef(String paymentRef);
 
+    Optional<Payment> findByOrderRef(String orderRef);
+
     @Modifying
     @Query(value = """
 INSERT INTO payment (payment_ref, order_ref, amount, payment_status, created_at, updated_at, success_email_sent)

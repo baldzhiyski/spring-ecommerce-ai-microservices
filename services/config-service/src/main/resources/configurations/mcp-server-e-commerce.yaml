@@ -13,3 +13,31 @@ spring:
         instructions: "This server provides needed  endpoints for the E-Commerce-Shop of Hristo Baldzhiyski"
 server:
   port: 8999
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      ordersClient:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      productsClient:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+  timelimiter:
+    instances:
+      ordersClient:
+        timeout-duration: 2s
+      productsClient:
+        timeout-duration: 2s
+
+
+application:
+  config:
+    customer-url: http://${GATEWAY_HOST:localhost}:8222/api/v1/customers
+    product-url: http://${GATEWAY_HOST:localhost}:8222/api/v1/products
+    payment-url: http://${GATEWAY_HOST:localhost}:8222/api/v1/payments
+    order-url: http://${GATEWAY_HOST:localhost}:8222/api/v1/orders
