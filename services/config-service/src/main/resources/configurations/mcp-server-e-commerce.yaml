@@ -7,7 +7,7 @@ spring:
       server:
         stdio: false
         type: sync
-        name: springone-sessions-mcp
+        name: e-commerce-app-mcp
         version: 0.0.1
         enabled: true
         instructions: "This server provides needed  endpoints for the E-Commerce-Shop of Hristo Baldzhiyski"
