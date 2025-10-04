@@ -41,9 +41,6 @@ This project is a **Microservices-based E-Commerce Application** built with **Sp
 
 - **AI Assistant & Personalization API**
   - **Conversational Q&A (Streaming RAG):** Unified endpoint for product/policy Q&A and chat with per-user memory; streams tokens via SSE/WebSocket.
-  - **Visual Search:** Image-to-product matching (embeddings + vector DB) with “why this match” rationales.
-  - **Checkout Upsell Bundles (Real-time):** Suggests add-on bundles before payment; validates stock/margin/thresholds in-flight.
-  - **Search Re-ranking & Query Rewrite:** Reorders candidates using user signals and expands/clarifies queries for relevance.
   - Built on MVC .
 
 ---
@@ -76,7 +73,6 @@ This project is a **Microservices-based E-Commerce Application** built with **Sp
 
 - **Observability**
   - **Distributed tracing with Zipkin** to visualize requests across **Gateway → Services → AI**.
-  - **AOP-based structured logging** for consistent application logs and audit trails.
 
 
 ---
@@ -86,7 +82,6 @@ This project is a **Microservices-based E-Commerce Application** built with **Sp
 - All services registered in **Eureka**, configured via **Config Service**.
 - RabbitMQ used for **asynchronous** and **reliable** communication.
 - Each service has its own **database** (polyglot persistence allowed).
-- CI/CD builds versioned containers; rolling or blue/green deployments.
 
 ---
 
