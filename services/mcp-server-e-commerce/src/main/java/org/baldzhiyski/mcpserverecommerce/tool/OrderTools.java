@@ -7,6 +7,8 @@ import org.baldzhiyski.mcpserverecommerce.response.OrderRes;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 
 @Component
 public class OrderTools {
@@ -19,24 +21,24 @@ public class OrderTools {
 
     @Tool(name = "orders-fetch-all", description = "Fetch all orders from the Orders service.")
     @CircuitBreaker(name = "ordersClient", fallbackMethod = "ordersFallback")
-    public ApiResponse<OrderRes> fetchOrders() {
-        OrderRes res = orderClient.getAllOrders();
+    public ApiResponse<List<OrderRes>> fetchOrders() {
+        List<OrderRes> res = orderClient.getAllOrders();
         return new ApiResponse<>("OK", "Fetched all orders successfully", res);
     }
 
     @Tool(name = "orders-fetch-by-customer", description = "Fetch orders by a given customer ID.")
     @CircuitBreaker(name = "ordersClient", fallbackMethod = "ordersByCustomerFallback")
-    public ApiResponse<OrderRes> fetchOrdersByCustomer(String customerId) {
-        OrderRes res = orderClient.getAllByCustomerId(customerId);
+    public ApiResponse<List<OrderRes>> fetchOrdersByCustomer(String customerId) {
+        List<OrderRes> res = orderClient.getAllByCustomerId(customerId);
         return new ApiResponse<>("OK", "Fetched orders for customer " + customerId, res);
     }
 
     // --- fallbacks ---
-    public ApiResponse<OrderRes> ordersFallback(Throwable t) {
+    public ApiResponse<List<OrderRes>> ordersFallback(Throwable t) {
         return new ApiResponse<>("ERROR", "Orders service is unavailable", null);
     }
 
-    public ApiResponse<OrderRes> ordersByCustomerFallback(String customerId, Throwable t) {
+    public ApiResponse<List<OrderRes>> ordersByCustomerFallback(String customerId, Throwable t) {
         if (t instanceof feign.FeignException.NotFound) {
             return new ApiResponse<>("NOT_FOUND", "No order found for customer " + customerId, null);
         }

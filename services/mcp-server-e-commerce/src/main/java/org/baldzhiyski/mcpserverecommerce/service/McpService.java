@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 
 @Service
 public class McpService {
@@ -24,17 +25,17 @@ public class McpService {
 
     // --- Feign calls with circuit breakers ---
     @CircuitBreaker(name = "ordersClient", fallbackMethod = "ordersFallback")
-    public OrderRes fetchOrders() {
+    public List<OrderRes> fetchOrders() {
         return orderClient.getAllOrders();
     }
 
     @CircuitBreaker(name = "ordersClient", fallbackMethod = "ordersByCustomerFallback")
-    public OrderRes fetchOrdersByCustomer(String customerId) {
+    public List<OrderRes> fetchOrdersByCustomer(String customerId) {
         return orderClient.getAllByCustomerId(customerId);
     }
 
     @CircuitBreaker(name = "productsClient", fallbackMethod = "productsFallback")
-    public ProductRes fetchProducts() {
+    public List<ProductRes> fetchProducts() {
         return productClient.getAllProducts();
     }
 

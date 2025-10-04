@@ -12,8 +12,11 @@ spring:
     driver-class-name: org.postgresql.Driver
   ai:
     chat:
+      repository:
+        jdbc:
+          initialize-schema: always
       client:
-        enabled: false
+        enabled: true
     openai:
       api-key: ${OPENAI_API_KEY}
 
@@ -27,11 +30,10 @@ spring:
 
     mcp:
       client:
-        enabled: true
         sse:
           connections:
             ecommerce-tools:
-              url: http://${MCP_HOST:localhost}:8999/sse
+              url: http://${MCP_HOST:localhost}:8999
 
   application:
     vector:
@@ -42,3 +44,8 @@ spring:
 
 server:
   port: 2222
+logging:
+  level:
+    org.springframework.ai.mcp: DEBUG
+    org.springframework.ai.tool: DEBUG
+

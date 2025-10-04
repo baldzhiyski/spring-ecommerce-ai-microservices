@@ -28,18 +28,17 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<String> sendMessage(@RequestBody String message,
-                                              @RequestHeader(name = "X-Thread-Id", required = false) String threadId,
-                                              @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<String> sendMessage(@RequestBody CustomerReq req,
+                                              @RequestHeader(name = "X-Thread-Id", required = false) String threadId) {
 
-        String userId = jwt.getSubject();
         String tid = (threadId == null || threadId.isBlank()) ? "default" : threadId;
-        String conversationId = "u:" + userId + ":t:" + tid;
+        String conversationId = "u:" + req.getCustomerId() + ":t:" + tid;
+
+
+
 
         String systemPrompt = SystemPrompts.generalAssistantWithUser(
-                userId,
-                jwt.getClaimAsString("name"),
-                jwt.getClaimAsString("email")
+                req.getCustomerId()
         );
 
         String answer = chatClient
@@ -51,7 +50,7 @@ public class ChatController {
                                 .build(),
                         new QuestionAnswerAdvisor(vectorStore)
                 )
-                .user(message)
+                .user(req.getMessage())
                 .call()
                 .content();
 

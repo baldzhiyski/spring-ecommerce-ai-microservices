@@ -7,6 +7,7 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Component
 public class ProductTools {
@@ -19,13 +20,13 @@ public class ProductTools {
 
     @Tool(name = "products-fetch-all", description = "Fetch all products from the Products service.")
     @CircuitBreaker(name = "productsClient", fallbackMethod = "productsFallback")
-    public ApiResponse<ProductRes> fetchProducts() {
-        ProductRes res = productClient.getAllProducts();
+    public ApiResponse<List<ProductRes>> fetchProducts() {
+        List<ProductRes> res = productClient.getAllProducts();
         return new ApiResponse<>("OK", "Fetched all products successfully", res);
     }
 
     // --- fallback ---
-    public ApiResponse<ProductRes> productsFallback(Throwable t) {
+    public ApiResponse<List<ProductRes>> productsFallback(Throwable t) {
         return new ApiResponse<>("ERROR", "Products service is unavailable", null);
     }
 }

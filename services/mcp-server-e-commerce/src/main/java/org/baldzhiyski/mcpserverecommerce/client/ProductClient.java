@@ -7,9 +7,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @FeignClient(name="product-client", url="${application.config.product-url}")
 public interface ProductClient {
     @GetMapping
-    ProductRes getAllProducts();
+    List<ProductRes> getAllProducts();
 
 }
